@@ -8,7 +8,7 @@
 // Catatan  : kode spesifik perangkat (atribut ASYNC_REG, BD wrapper) hanya ada di target/.
 module kv260_top #(
   parameter int UART_BAUD = 115200,
-  parameter int CORE_HZ   = 147_456_000,                       // K-22: 144 x 1,024 MHz
+  parameter int CORE_HZ   = 300_032_000,                       // 293 x 1,024 MHz (K-24; K-22 untuk Artix-7)
   parameter     INIT_W    = "tb/vectors/cnn/cnn_wrom.mem",
   parameter     INIT_B    = "tb/vectors/cnn/cnn_bias.mem",
   parameter     INIT_RQ   = "tb/vectors/cnn/cnn_rq.mem",
@@ -26,7 +26,7 @@ module kv260_top #(
   output logic led_busy,     // Pmod (opsional): CNN sibuk
   output logic led_rec       // Pmod (opsional): sedang merekam
 );
-  localparam int CLK_PER_BIT  = CORE_HZ / UART_BAUD;           // 147,456 MHz / 115200 = 1280 (tepat)
+  localparam int CLK_PER_BIT  = CORE_HZ / UART_BAUD;           // 300,032 MHz / 115200 = 2604 (dibulatkan ke bawah)
   localparam int CLK_PER_BCLK = CORE_HZ / 1_024_000;           // BCLK = 16 kHz x 64 = 1,024 MHz -> 144
 
   logic core_clk, core_rst_n_bd;

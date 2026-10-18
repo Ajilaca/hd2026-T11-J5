@@ -234,3 +234,9 @@ FFT_W tetap 24 (pada data nyata W=22 juga lolos ambang K-04, 0,029 oktaf; belum 
 - Batas: satu populasi, 364 peserta, tanpa data independen; tidak ada klaim klinis dari murid.
 - Penguatan: lebih banyak peserta (CODA, K-15) dan validasi pada klinik/populasi lain, pasca-hackathon.
 
+
+## K-24 Target KV260: clock inti 300,032 MHz (2026-10-18)
+- Target demo: Kria KV260 (XCK26-SFVC784-2LV-C), kode di `target/kv260/` (RTL dan golden tidak berubah). K-22 (147,456 MHz) tetap berlaku untuk Artix-7.
+- Clock inti dipilih 300,032 MHz = 293 x 1,024 MHz, sehingga `CLK_PER_BCLK = 293` (BCLK I2S 1,024 MHz tepat di nominal) dan `CLK_PER_BIT = 2604`.
+- Dasar: pencarian Fmax build `full` (MMCM, I/O, XDC; Vivado 2026.1, satu seed). Pada 300,032 MHz P=16 WNS +0,065 ns dan P=32 +0,219 ns; pada 333,82 MHz P=16 gagal (-0,270 ns), P=32 lolos tipis (+0,018 ns). Aturan pengguna: bila 300 MHz lolos, ambil itu.
+- Batas: MMCM dari `pl_clk0` (99,999 MHz) menghasilkan 299,997 MHz (-0,012%), bukan 300,032; fs aktual sekitar 15,998 kHz. Hasil adalah timing Vivado, bukan uji di papan.

@@ -4,18 +4,21 @@
 # MODE=ooc : hanya suaratb_top, tanpa pin dan IP (laporan sumber daya/timing murni, mirip target/artix7/synth.tcl).
 # MODE=full: kv260_top + block design (PS pl_clk0 -> MMCM) + kv260.xdc, sampai write_bitstream.
 # PDIR berisi cnn_cfg_pkg.sv dan cnn_{wrom,bias,rq}.mem dari target/artix7/prep_synth.py.
-# Env: P, PDIR, OUT (wajib); MODE (ooc), CLK_NS (6.782 = 147,456 MHz), PART, BOARD_REPO, IMPL (1), CORE_MHZ (147.456).
+# Env: P, PDIR, OUT (wajib); MODE (ooc), CLK_NS (3.333 = 300,032 MHz), PART, BOARD_REPO, IMPL (1), CORE_MHZ (300.032).
 set P      $::env(P)
 set PDIR   $::env(PDIR)
 set OUT    $::env(OUT)
 set MODE   [expr {[info exists ::env(MODE)] ? $::env(MODE) : "ooc"}]
-set CLK_NS [expr {[info exists ::env(CLK_NS)] ? $::env(CLK_NS) : 6.782}]
+set CLK_NS [expr {[info exists ::env(CLK_NS)] ? $::env(CLK_NS) : 3.333}]
 set PART   [expr {[info exists ::env(PART)] ? $::env(PART) : "xck26-sfvc784-2LV-c"}]
 set IMPL   [expr {[info exists ::env(IMPL)] ? $::env(IMPL) : 1}]
+set CORE_MHZ [expr {[info exists ::env(CORE_MHZ)] ? $::env(CORE_MHZ) : 300.032}]   ;# clock inti mode full (kelipatan 1,024 MHz)
+set CORE_HZ  [expr {int(round($CORE_MHZ * 1e6))}]
 set BOARD_REPO [expr {[info exists ::env(BOARD_REPO)] ? $::env(BOARD_REPO) : "/data/suaratb/ext/xilinx_board_store/repo/boards/Xilinx"}]
 file mkdir $OUT
 set root [pwd]
-set_param general.maxThreads 4
+set JOBS [expr {[info exists ::env(JOBS)] ? $::env(JOBS) : 1}]   ;# RAM 7,6 GB: jalankan 1 job (4 job membuat OOM)
+set_param general.maxThreads [expr {$JOBS > 1 ? 4 : 2}]
 
 set files {}
 set fh [open rtl/files.f r]
@@ -65,15 +68,15 @@ if {$MODE eq "ooc"} {
   add_files -norecurse [glob $OUT/proj/kv260.gen/sources_1/bd/kv260_clk/hdl/kv260_clk_wrapper.v]
   add_files -fileset constrs_1 -norecurse $root/target/kv260/kv260.xdc
   set_property top kv260_top [current_fileset]
-  set_property generic [join $generics " "] [current_fileset]
+  set_property generic [join [concat $generics [list "CORE_HZ=$CORE_HZ"]] " "] [current_fileset]
   update_compile_order -fileset sources_1
   generate_target all [get_files kv260_clk.bd]
-  launch_runs synth_1 -jobs 4; wait_on_run synth_1
+  launch_runs synth_1 -jobs $JOBS; wait_on_run synth_1
   open_run synth_1
   report_utilization -file $OUT/util_synth.rpt
   report_timing_summary -file $OUT/timing_synth.rpt
   if {$IMPL} {
-    launch_runs impl_1 -to_step write_bitstream -jobs 4; wait_on_run impl_1
+    launch_runs impl_1 -to_step write_bitstream -jobs $JOBS; wait_on_run impl_1
     open_run impl_1
     report_utilization -file $OUT/util_impl.rpt
     report_utilization -hierarchical -file $OUT/util_impl_hier.rpt
