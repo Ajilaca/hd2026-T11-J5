@@ -1,0 +1,13 @@
+# Paket Python untuk golden, testbench cocotb, skrip target/ (termasuk target/asic) dan host UART.
+# Versi = yang dipakai saat hasil di repo dibuat (Python 3.12). Pelatihan model (model/) butuh paket tambahan
+# (torch, librosa, scikit-learn, dll.) dan tidak tercantum di sini.
+numpy==2.5.3
+scipy==1.18.1
+pandas==3.0.6
+pytest==9.1.1
+soundfile==0.14.0
+cocotb==2.1.0
+find_libpython==0.5.1
+pillow
+pyserial
+volare==0.20.6
