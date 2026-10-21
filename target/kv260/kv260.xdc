@@ -1,8 +1,8 @@
 # Constraint KV260 (Kria K26 SOM + carrier). Semua I/O di Pmod 3,3 V (HDA11..HDA18).
 # SUMBER PIN: berkas resmi AMD/Xilinx kria-vitis-platforms, kv260/platforms/kv260_bist/xdc/pin.xdc (commit 60c3f54, 2026-07-08):
 #   PMOD_GPIO_tri_io[0..7] = HDA11..HDA18 = H12 E10 D10 C11 B10 E12 D11 B11, LVCMOS33.
-# BELUM DIVERIFIKASI: korespondensi indeks 0..7 terhadap nomor pin fisik Pmod (diasumsikan 0..3 = pin 1-4, 4..7 = pin 7-10).
-# Periksa dengan UG1089 atau multimeter sebelum menyambung INMP441/adaptor UART.
+# Nomor pin fisik J2 (tabel pengguna, tampaknya UG1089; belum dicocokkan dengan dokumen aslinya): pin 1..8 = H12 B10 E10 E12 D10 D11 C11 B11; pin 9,10 = GND; pin 11,12 = 3,3 V.
+# UART: uart_rx = H12 (pin 1), uart_tx = E10 (pin 3). KOREKSI: catatan lama (indeks 0..3 = pin 1-4, dst.) keliru. Periksa dengan multimeter sebelum menyambung.
 
 # --- UART (demo utama) ---
 set_property PACKAGE_PIN H12 [get_ports uart_rx]

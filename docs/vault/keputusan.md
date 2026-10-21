@@ -240,3 +240,91 @@ FFT_W tetap 24 (pada data nyata W=22 juga lolos ambang K-04, 0,029 oktaf; belum 
 - Clock inti dipilih 300,032 MHz = 293 x 1,024 MHz, sehingga `CLK_PER_BCLK = 293` (BCLK I2S 1,024 MHz tepat di nominal) dan `CLK_PER_BIT = 2604`.
 - Dasar: pencarian Fmax build `full` (MMCM, I/O, XDC; Vivado 2026.1, satu seed). Pada 300,032 MHz P=16 WNS +0,065 ns dan P=32 +0,219 ns; pada 333,82 MHz P=16 gagal (-0,270 ns), P=32 lolos tipis (+0,018 ns). Aturan pengguna: bila 300 MHz lolos, ambil itu.
 - Batas: MMCM dari `pl_clk0` (99,999 MHz) menghasilkan 299,997 MHz (-0,012%), bukan 300,032; fs aktual sekitar 15,998 kHz. Hasil adalah timing Vivado, bukan uji di papan.
+
+## K-25 Gabungan Zambia + TBscreen untuk sinyal audio: aturan ditetapkan sebelum angka (2026-10-21)
+- Keputusan pengguna: TBscreen digabung ke pelatihan untuk mencoba menaikkan AUROC. Aturan di bawah ditulis SEBELUM eksperimen
+  dijalankan dan tidak diubah setelah angka keluar. Kode: `model/pretrained/merge_tbs.py`.
+- Data: Zambia = semesta protokol E0 (peserta berlabel dengan audio) dengan embedding HeAR yang sudah ada (`emb_hear.npz`).
+  TBscreen = batuk pasif berlabel TB/NTB dengan WAV, satu perangkat per subjek (urutan pixel, codec, yeti), maksimal 6 klip
+  paling keras (tanpa label), resep HeAR sama dengan Zambia (jendela 2 s mulai 0,25 s sebelum onset; klip TBscreen 1 s diberi nol).
+  Embedding dirata-rata per peserta. Kolom TBscreen `cohort`, `class`, hasil lab, CXR, penyebab dan pengobatan batuk tidak dipakai.
+- Pembanding (dua lengan, lipatan dan pengklasifikasi sama, LR `clinical.lr`):
+  Z = latih Zambia saja; G = latih Zambia + TBscreen dengan bobot sampel sehingga tiap sel dataset x label berbobot total sama
+  (asal dataset tidak berkorelasi dengan label di distribusi latih). Lipatan Zambia = E0 (5 x 10); TBscreen 5 lipatan per ulangan,
+  stratifikasi label x cohort. Uji hanya pada lipatan yang ditahan.
+- Ukuran utama: AUROC terstratifikasi jenis kelamin pada peserta Zambia yang ditahan, G vs Z. **Berhasil** bila batas bawah CI 95%
+  bootstrap berpasangan (atas peserta Zambia) untuk Δ = G - Z di atas 0 DAN AUROC G di atas p95 nol permutasi (label diacak di dalam
+  dataset x klinik/cohort x jenis kelamin, seluruh pipeline diulang). Angka bantu "sekitar 0,07" yang dipakai saat diskusi adalah
+  lebar CI satu AUROC dengan 60 positif; kriteria formal memakai CI selisih berpasangan.
+- Pelaporan wajib (semua, apa pun hasilnya): Z dan G (mentah dan strat.), Δ dengan CI, nol permutasi; AUROC gabungan
+  (Zambia + TBscreen) selalu berdampingan dengan AUROC "asal dataset saja" pada peserta yang sama (sekitar 0,74 dari hitungan
+  jumlah peserta); AUROC dalam TBscreen dengan catatan cohort (cohort saja sekitar 0,92); lintas arah TBscreen -> Zambia dan
+  Zambia -> TBscreen; uji jalan pintas embedding -> asal dataset.
+- Bila berhasil: lanjut ke distilasi CNN hardware dengan klip TBscreen ditambahkan (tahap tanpa label) dan probe berbobot sama.
+  Bila tidak: hasil dilaporkan sebagai negatif; penguatan berikutnya lewat CODA (K-15).
+- **Hasil K-25 (2026-10-21; `runs/reports/gabungan-tbscreen.md`; HeAR + LR, Zambia 364/60, TBscreen pasif 123 subjek/87 TB, 5 x 10 lipatan, 40 nol):
+  TIDAK BERHASIL.** Pada peserta Zambia yang ditahan: Z (Zambia saja) strat. 0,683 / mentah 0,732; G (gabungan berbobot) strat. 0,673 /
+  mentah 0,708; Δ = -0,011, CI 95% [-0,056, +0,037]. Nol lengan G: mean 0,505, p95 0,561, maks 0,604; G di atas p95 tetapi Δ tidak positif.
+  Menambah TBscreen tidak menaikkan AUROC di Zambia.
+- Pelaporan wajib: AUROC gabungan 0,750 vs asal-dataset-saja 0,743 (selisih 0,007: angka gabungan praktis = jalan pintas); rata-rata
+  di dalam tiap dataset 0,689; dalam TBscreen 0,579 (cohort saja 0,917); Zambia -> TBscreen 0,575; embedding -> asal dataset 1,000
+  (dataset sepenuhnya dapat dikenali).
+- Pengamatan eksploratori (tidak diregistrasi, tanpa nol sendiri): TBscreen -> Zambia 0,701 mentah / 0,644 strat. (HeAR); belum bisa
+  dianggap sinyal sebelum ada nol permutasi dan kontrol perancu.
+- Keputusan: distilasi CNN dengan klip TBscreen ditambahkan TIDAK dilanjutkan (syarat K-25 tidak terpenuhi). Penguatan berikutnya
+  lewat CODA (K-15). Bobot hardware untuk demo tetap murid distilasi K-23.
+
+## K-26 Lanjutan penguatan audio: aturan ditetapkan sebelum angka (2026-10-21)
+- Urutan disetujui pengguna: (4) uji TBscreen -> Zambia, (2) guru pralatih lain, (3) gabungan guru, (1) distilasi dengan klip
+  tanpa label tambahan. CODA (K-15) dicoba ulang oleh pengguna.
+- **(4) TBscreen -> Zambia.** Angka utama SUDAH terlihat di K-25 (HeAR 0,701 mentah / 0,644 strat.), jadi ini uji konfirmasi, bukan
+  penemuan. Latih LR (`clinical.lr`) pada 123 subjek TBscreen pasif (embedding HeAR rata-rata per subjek), uji pada 364 peserta
+  Zambia. Nol utama: label TBscreen diacak DI DALAM jenis kelamin (memutus kaitan label-cohort), 200 kali, seluruh pelatihan diulang.
+  Nol kedua: diacak di dalam cohort x jenis kelamin (dilaporkan, diperkirakan tidak informatif karena cohort ~ label).
+  Kontrol: (a) pelatihan berbobot sama per sel jenis kelamin x label; (b) embedding diresidualisasi terhadap jenis kelamin + usia,
+  regresi dipasang terpisah per dataset tanpa label; (c) AUROC skor -> jenis kelamin di Zambia.
+  **Dianggap sinyal** bila AUROC strat. Zambia > p95 nol utama DAN tetap > p95 nol utama pada kontrol (a) dan (b).
+- **(2) Guru lain.** Kandidat ditetapkan sekarang: AST (`MIT/ast-finetuned-audioset-10-10-0.4593`), CLAP (`laion/clap-htsat-unfused`),
+  WavLM (`microsoft/wavlm-base-plus`), Whisper encoder (`openai/whisper-base`). Klip dan jendela identik dengan HeAR (2 s, pilihan klip
+  sama, seleksi tanpa label). Pooling: AST pooler, CLAP `get_audio_features`, WavLM dan Whisper rata-rata keadaan tersembunyi terakhir.
+  Evaluasi protokol E0 (5 x 10, nol 40). Kandidat dianggap lebih baik dari HeAR hanya bila batas bawah CI 95% bootstrap berpasangan
+  Δ (kandidat - HeAR, AUROC strat.) > 0. Semua kandidat dilaporkan.
+- **(3) Gabungan guru.** Rata-rata skor OOF terstandar HeAR + OPERA-CT, dan HeAR + kandidat terbaik (2). Kriteria sama dengan (2).
+- **(1) Distilasi diperluas.** Dijalankan dengan guru terbaik dari (2)/(3). Kriteria ditetapkan sebelum (1) dimulai.
+- **Hasil K-26 (4) (2026-10-21; `runs/reports/tbscreen-ke-zambia.md`; HeAR + LR, latih TBscreen 123/87, uji Zambia 364/60, nol 200): BUKAN SINYAL
+  menurut kriteria.** AUROC strat. Zambia: utama 0,644 (nol p95 0,624; p 0,035; skor -> jenis kelamin 0,740); (a) berbobot jenis kelamin x label
+  0,634 (p95 0,637; p 0,065; gagal tipis); (b) residu jenis kelamin+usia 0,659 (p95 0,633; p 0,020; skor -> jenis kelamin 0,499). Kriteria
+  meminta ketiganya lolos; (a) gagal sebesar 0,003. Pembacaan: bukti lemah (60 positif; nol maks 0,69-0,70), tidak ditolak dan tidak
+  diklaim; layak diulang dengan data lebih besar (CODA).
+
+## K-27 Pembagian acak 327 Zambia + 110 TBscreen, uji pada sisanya: aturan ditetapkan sebelum angka (2026-10-21)
+- Permintaan pengguna: latih dengan 327 peserta ACAK Zambia dan 110 subjek ACAK TBscreen; uji pada sisanya (37 Zambia, 13 TBscreen);
+  bandingkan dengan baseline model sekarang. Pembagian tunggal dengan 37 dan 13 uji (8 dan 6 positif pada percobaan awal) terlalu
+  derau, jadi pembagian acak DIULANG 500 kali (seed 1000+r, acak sederhana tanpa stratifikasi; pembagian ditolak dan diundi ulang bila
+  uji Zambia atau uji TBscreen kehilangan salah satu kelas).
+- Model: embedding HeAR + LR (`clinical.lr`), sama dengan K-25/K-26. Murid CNN int8 yang ada di FPGA adalah distilasi dari HeAR
+  (CV E0: guru 0,672, murid 0,654 AUROC strat.); murid TIDAK dilatih ulang per pembagian (mahal), jadi HeAR + LR adalah wakil.
+- Lengan: Z = latih 327 Zambia saja (baseline model sekarang pada pembagian yang sama); G = 327 Zambia + 110 TBscreen, bobot sel
+  dataset x label sama; T = 110 TBscreen saja. Semua diuji pada 37 Zambia dan 13 TBscreen sisa.
+- Ukuran utama: skor tiap peserta Zambia dirata-rata atas pembagian tempat ia menjadi uji (~50 kali); AUROC strat. jenis kelamin.
+  Δ (G - Z) dengan CI 95% bootstrap berpasangan atas peserta. Berhasil bila batas bawah CI > 0 DAN G > p95 nol.
+  Nol: label latih diacak di dalam klinik x jenis kelamin (Zambia) dan cohort x jenis kelamin (TBscreen), 20 nol x 100 pembagian.
+- Dilaporkan juga: sebaran AUROC per pembagian (rata-rata, simpangan, persentil 2,5/97,5) untuk Zambia dan TBscreen. AUROC TBscreen
+  tercampur cohort (A 93 subjek, C 30 subjek; C seluruhnya NTB) dan hanya dilaporkan dengan catatan itu.
+- Batas klaim: ini estimasi untuk HeAR + LR dengan data kecil, bukan kinerja klinis; murid CNN di FPGA tidak diuji ulang.
+- **Hasil K-27 (2026-10-21; `runs/reports/split-327-110.md`; HeAR + LR, 500 pembagian acak, nol 20 x 100): TIDAK BERHASIL menurut kriteria.**
+  AUROC strat. jenis kelamin pada peserta Zambia uji (skor dirata-rata atas ~51 pengujian per peserta): Z 0,697, G 0,680, T 0,593.
+  Δ (G - Z) = -0,017, CI 95% [-0,070, +0,035]. Nol p95: Z 0,633, G 0,659 (maks 0,668); Z di atas p95, G hanya tipis di atasnya.
+  Satu pembagian (37 uji Zambia, 13 uji TBscreen) berayun lebar (Zambia strat. lengan Z 0,70 ± 0,12, rentang 0,43-0,94), jadi angka
+  dari satu pembagian tidak boleh dipakai. Menambah TBscreen tidak menaikkan AUROC (konsisten dengan K-25).
+
+## K-28 Kurva belajar HeAR + LR: 291 vs 327 peserta latih Zambia, uji peserta yang sama (2026-10-21)
+- Pertanyaan pengguna: lebih baik 327 atau 291 peserta latih? Angka yang ada berbeda protokol (K-27 lengan Z 0,697 dengan uji 37; CV E0 0,683 dengan uji 73),
+  jadi tidak sebanding. Desain berpasangan: 500 pembagian acak (seed 1000+r); urutan acak peserta; UJI = 37 peserta terakhir (sama untuk semua ukuran);
+  latih = n peserta pertama dengan n dalam {100, 150, 220, 291, 327} (himpunan 291 adalah bagian dari 327). HeAR + LR (`clinical.lr`), Zambia saja.
+- Ukuran utama: AUROC strat. jenis kelamin pada skor uji dirata-rata per peserta; Δ (327 - 291) dengan CI 95% bootstrap berpasangan atas peserta.
+  327 dianggap lebih baik hanya bila batas bawah CI > 0. Pembagian ditolak bila uji kehilangan salah satu kelas.
+- Batas klaim: HeAR + LR, bukan murid CNN di FPGA; data kecil (60 positif).
+- **Hasil K-28 (2026-10-21; `runs/reports/kurva-belajar.md`; HeAR + LR Zambia saja, 500 pembagian, uji 37 peserta sama): 327 TIDAK terbukti lebih baik dari 291.**
+  AUROC strat.: 100 -> 0,700; 150 -> 0,704; 220 -> 0,692; 291 -> 0,703; 327 -> 0,698. Δ (327 - 291) = -0,005, CI 95% [-0,013, +0,004].
+  Kurva datar: menambah peserta Zambia dalam kisaran ini tidak menaikkan AUROC (plafon HeAR + LR sekitar 0,70 pada protokol ini).
