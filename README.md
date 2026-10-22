@@ -196,7 +196,7 @@ Perintah build dan tes ada di `Makefile` (`make help`) dan docstring skrip; READ
 
 ## Lisensi
 
-Lihat `LICENSE`. Data Zambia CIDRZ (ODbL-1.0) dan TBscreen (CC BY 4.0) tidak didistribusikan di repo ini.
+Lihat `LICENSE`. Data Zambia CIDRZ (ODbL-1.0)
 
 ## Penggunaan AI
 
