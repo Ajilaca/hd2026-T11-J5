@@ -14,7 +14,7 @@ siap tape-out. Rinciannya di bagian Hasil, Keterbatasan, dan Rencana.
 |---|---|
 | `scripts/` | Skrip yang menjalankan alur (semua dijalankan dari root repo, lihat tabel berikut) |
 | `ram/` | Pengganti RAM dan ROM bobot dengan makro SRAM OpenRAM, patch `cnn_top`, dan tes simulasinya |
-| `results/` | Hasil 13 layout modul yang di-commit: `metrics.csv` (ringkasan), `metrics/<layout>.json` (metrik lengkap OpenLane), `<layout>.png` |
+| `results/` | Hasil yang di-commit: 13 layout modul (`metrics.csv` ringkasan, `metrics/<layout>.json` metrik lengkap OpenLane, `<layout>.png`) dan `cnn_top/` (metrik final, ringkasan timing, signoff tanpa makro, `riwayat_eco.csv`) |
 | `layout/` | Paket hasil layout per modul (GDS, DEF, LEF, Liberty, netlist, SDC, SPEF, metrik) dan README yang menjelaskan isinya. 774 MB: isinya di-ignore git (hanya README dan `metrics.csv` yang dilacak) dan diunduh dari Release (lihat Unduhan) |
 | `README.md` | Dokumen ini |
 
@@ -24,7 +24,9 @@ Isi `scripts/`:
 |---|---|
 | `synth_sky130.sh` | Sintesis Yosys ke sel sky130 untuk perkiraan luas per modul (tanpa layout) |
 | `layout_modules.py` | Layout modul tanpa RAM; `CLK_NS` mengatur clock, `FIX=1` menjalankan ulang dengan perbaikan antena dan slew/kapasitansi |
-| `layout_cnn_macro.py` | Layout `cnn_top` dengan RAM dan ROM bobot sebagai makro SRAM (`WROM=sram P=16`) |
+| `layout_cnn_macro.py` | Layout `cnn_top` dengan RAM dan ROM bobot sebagai makro SRAM (`WROM=sram P=16`); `FLOOR=2` floorplan ulang, `FIX=1` perbaikan kabel panjang, `SIGNOFF=ip` signoff tanpa makro |
+| `signoff_nomacro.py` | XOR (Magic vs KLayout) dan DRC KLayout pada GDS dengan instans makro dikeluarkan; dipanggil `layout_cnn_macro.py` atau sendiri |
+| `cnn_top_eco/` | Skrip run dasar 10,24 MHz dan delapan putaran ECO kapasitansi/antena `cnn_top` (lihat README di sana) |
 | `render_layout.py` | GDS ke PNG dengan label layer dan legenda |
 | `collect_results.py` | Menyalin metrik ke `results/` dan membuat paket serah-terima (zip) |
 
@@ -37,9 +39,9 @@ Isi `ram/`:
 | `patch_wrom.py` | Membuat salinan `cnn_top` (di direktori build) yang memakai `wrom_sky130` dan port `wl_*` |
 | `check_ram_wrapper.py`, `test_wrom_load.py` | Simulasi cocotb: `cnn_top` dengan makro vs golden, dan jalur muat bobot |
 
-**Belum ada di repo** (hanya di WSL, `~/suaratb`): `signoff_nomacro.py` (XOR dan DRC pada GDS tanpa makro), perubahan terbaru
-`layout_cnn_macro.py`, dan skrip ECO per putaran (`~/suaratb-data/build/asic/cnn_top/p16_10m_eco*/eco_scripts/`). Hasil
-`cnn_top` final tidak bisa direproduksi penuh dari repo sebelum berkas itu dipindahkan (lihat Rencana).
+Skrip dan hasil `cnn_top` final sudah ada di repo (`scripts/layout_cnn_macro.py`, `scripts/signoff_nomacro.py`,
+`scripts/cnn_top_eco/`, `results/cnn_top/`). Skrip ECO berpath `$HOME/suaratb-data/build/asic/cnn_top/...` dan dijalankan di
+WSL dengan Docker, bukan dari root repo.
 
 Hasil lengkap per run (log semua langkah, ODB) ada di `$SUARATB_DATA/build/asic/<layout>/` di WSL, tidak di git. Hasil
 `cnn_top` final: `$SUARATB_DATA/build/asic/cnn_top/p16_10m_eco8/run/final/`.
@@ -176,5 +178,5 @@ Platform tape-out menentukan sisanya, jadi keputusan itu didahulukan.
 7. **Layout top**, lalu **signoff chip**: DRC, LVS, STA 9 corner, antena, kapasitansi, slew, fanout; simulasi gate-level
    dengan SDF.
 8. **Precheck resmi platform** dan pengiriman.
-9. **Rapikan repo:** pindahkan `signoff_nomacro.py` dan skrip ECO putaran 8 ke `scripts/`, perbarui `results/` dengan
-   `cnn_top` final. (`layout/` sudah di-ignore dan hasilnya dirilis di GitHub Release.)
+9. **Rapikan repo** (sebagian selesai): skrip, metrik final, dan paket hasil sudah ada di repo dan Release. Tersisa gambar
+   PNG `cnn_top` (`render_layout.py`) dan memasukkan `cnn_top` ke `collect_results.py`.

@@ -1,0 +1,14 @@
+nom_tt_025C_1v80   setup   41.195  hold   0.177  hold_vio 0  kap 0  slew 276
+nom_ss_100C_1v60   setup   34.708  hold   0.581  hold_vio 0  kap 0  slew 596
+max_ss_100C_1v60   setup   34.398  hold   0.584  hold_vio 0  kap 0  slew 666
+min_ss_100C_1v60   setup   35.082  hold   0.695  hold_vio 0  kap 0  slew 443
+nom_ff_n40C_1v95   setup   43.675  hold   0.098  hold_vio 0  kap 0  slew 276
+max_ff_n40C_1v95   setup   43.527  hold   0.135  hold_vio 0  kap 0  slew 276
+min_ff_n40C_1v95   setup   43.831  hold   0.111  hold_vio 0  kap 0  slew 276
+design__max_cap_violation__count 0
+design__max_slew_violation__count 666
+design__max_fanout_violation__count 1205
+route__drc_errors 0
+timing__hold_vio__count 0
+timing__setup_vio__count 0
+antena pasca-DRT: 0 net
