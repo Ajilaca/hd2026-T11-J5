@@ -7,7 +7,7 @@ CLK_NS  ?= 10
 DATA    ?= $(or $(SUARATB_DATA),/data/suaratb)
 MODEL   ?= $(DATA)/runs/model_v2/qmodel.npz
 
-.PHONY: help golden tables vectors budget calib lint test test-unit test-golden synth-prep synth-yosys vivado wave clean-build
+.PHONY: help golden tables vectors budget calib lint test test-unit test-golden synth-prep synth-yosys wave
 
 help:
 	@echo "golden       : tabel .mem + paket SV + vektor sintetis dari golden/ (Fase 0)"
@@ -17,7 +17,6 @@ help:
 	@echo "test-unit    : tes unit satu modul: make test-unit M=<modul> (mis. M=fft512)"
 	@echo "test         : regresi RTL cocotb. HANYA Fase T: make test FASE_T=1"
 	@echo "synth-yosys  : sintesis lintas-vendor Yosys: make synth-yosys P=16 (butuh sv2v dan yosys)"
-	@echo "vivado       : sintesis+implementasi Vivado XC7A35T-1 OOC: make vivado P=16 CLK_NS=6.667"
 	@echo "wave         : buka dump gelombang terakhir"
 
 golden: tables vectors budget
@@ -58,17 +57,8 @@ synth-yosys: synth-prep
 	SUARATB_DATA=$(DATA) target/yosys/synth.sh $(P)
 	@test $(DATA)/build/yosys/P$(P)/stat.txt -nt $(DATA)/build/.stamp_yosys || { echo "Yosys gagal: lihat $(DATA)/build/yosys/P$(P)/yosys.log"; exit 1; }
 
-vivado:
-	@mkdir -p $(DATA)/build && touch $(DATA)/build/.stamp_vivado
-	SUARATB_DATA=$(DATA) CLK_NS=$(CLK_NS) target/artix7/run_sweep.sh $(P)
-	@test $(DATA)/build/vivado/P$(P)/timing_impl.rpt -nt $(DATA)/build/.stamp_vivado || { echo "Vivado gagal: lihat $(DATA)/build/vivado/P$(P).log"; exit 1; }
-	@grep -A4 "WNS(ns)" $(DATA)/build/vivado/P$(P)/timing_impl.rpt | head -6
-
 synth-prep:
-	@test -f $(DATA)/build/synth/P$(P)/cnn_cfg_pkg.sv || $(PY) target/artix7/prep_synth.py --p $(P) --out $(DATA)/build/synth/P$(P) --model $(MODEL)
+	@test -f $(DATA)/build/synth/P$(P)/cnn_cfg_pkg.sv || $(PY) target/common/prep_synth.py --p $(P) --out $(DATA)/build/synth/P$(P) --model $(MODEL)
 
 wave:
 	gtkwave $$(ls -t target/build/*/*.vcd target/build/*/*.fst 2>/dev/null | head -1)
-
-clean-build:
-	rm -rf target/build/*

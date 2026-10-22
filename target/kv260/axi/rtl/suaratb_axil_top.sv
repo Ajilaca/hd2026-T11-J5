@@ -1,11 +1,11 @@
 // suaratb_axil_top: suaratb dengan antarmuka host AXI4-Lite (pengganti UART). Inti (i2s_rx -> preemph -> frame_buf ->
-//            dsp_chain -> feat_buf -> cnn_top, cough_det, sekuenser segmen) sama dengan rtl/sys/suaratb_top.sv; hanya
-//            uart_bridge + csr diganti axil_ctrl. Sumber sampel: mikrofon I2S (mode 1) atau klip dataset lewat AXI (mode 0).
+//            dsp_chain -> feat_buf -> cnn_top, cough_det, sekuenser segmen) sama dengan versi UART lama (rtl/sys/suaratb_top.sv, dihapus 2026-10-22; ada di riwayat git dan tag submission); hanya
+//            host AXI4-Lite (axil_ctrl) menggantikan antarmuka UART lama. Sumber sampel: mikrofon I2S (mode 1) atau klip dataset lewat AXI (mode 0).
 // Parameter : CLK_PER_BCLK (I2S; 293 pada 300,032 MHz), DS_GAP (jarak sampel dataset), INIT_* (.mem CNN dan DSP)
 // Antarmuka : clk (inti, juga clock AXI), rst_n, s_axi_* (AXI4-Lite 12 bit alamat, 32 bit data), i2s (bclk/ws/sd),
 //             led_busy/led_rec, irq (result_new)
-// Catatan   : salinan glue suaratb_top (bukan modifikasi rtl/). Bila suaratb_top berubah, perbarui berkas ini; tb/sys/test_axil.py
-//             membandingkan hasil dengan golden sehingga perbedaan perilaku akan terdeteksi.
+// Catatan   : glue sistem (satu-satunya top level sejak UART dihapus); tb/sys/test_axil.py membandingkan hasil dengan golden
+//             sehingga perbedaan perilaku akan terdeteksi.
 module suaratb_axil_top #(
   parameter int CLK_PER_BCLK = 293,
   parameter int DS_GAP       = suaratb_pkg::FRAME_LEN + 16,

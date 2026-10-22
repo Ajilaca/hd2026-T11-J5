@@ -1,8 +1,8 @@
 # Sintesis/implementasi/bitstream KV260 untuk varian host AXI4-Lite (tanpa UART). Jalankan dari ROOT repo:
-#   P=32 PDIR=/data/suaratb/build/synth/P32_distill OUT=/data/suaratb/build/kv260/axil_P32 vivado -mode batch -source target/kv260/synth_axil.tcl
+#   P=32 PDIR=/data/suaratb/build/synth/P32_distill OUT=/data/suaratb/build/kv260/axil_P32 vivado -mode batch -source target/kv260/axi/flow/synth_axil.tcl
 # Keluaran: $OUT/suaratb_axil_P<P>.bit dan .hwh (nama sama, dipakai PYNQ), laporan util/timing/daya/clock.
 # Env: P, PDIR, OUT (wajib); STOP (bd | synth | impl, default impl) menghentikan lebih awal; CORE_MHZ (300.032), PL0_MHZ (100),
-#      PART, BOARD_REPO, JOBS (1). PDIR berisi cnn_cfg_pkg.sv dan cnn_{wrom,bias,rq}.mem dari target/artix7/prep_synth.py.
+#      PART, BOARD_REPO, JOBS (1). PDIR berisi cnn_cfg_pkg.sv dan cnn_{wrom,bias,rq}.mem dari target/common/prep_synth.py.
 set P      $::env(P)
 set PDIR   $::env(PDIR)
 set OUT    $::env(OUT)
@@ -17,7 +17,7 @@ file mkdir $OUT
 
 # pembungkus IP dari template (jalur .mem absolut, CLK_PER_BCLK = CORE_HZ / 1,024 MHz)
 set clk_per_bclk [expr {int(round($CORE_MHZ * 1e6 / 1.024e6))}]
-set fh [open $root/target/kv260/axi/suaratb_axil_ip.v.in r]; set tpl [read $fh]; close $fh
+set fh [open $root/target/kv260/axi/rtl/suaratb_axil_ip.v.in r]; set tpl [read $fh]; close $fh
 set ipv [string map [list \
   @CLK_PER_BCLK@ $clk_per_bclk @INIT_W@ $PDIR/cnn_wrom.mem @INIT_B@ $PDIR/cnn_bias.mem @INIT_RQ@ $PDIR/cnn_rq.mem \
   @INIT_WIN@ $root/rtl/mem/window_hamming.mem @INIT_COS@ $root/rtl/mem/twiddle_cos.mem @INIT_SIN@ $root/rtl/mem/twiddle_sin.mem \
@@ -34,7 +34,7 @@ while {[gets $fh line] >= 0} {
   lappend files $root/$line
 }
 close $fh
-lappend files $root/target/kv260/axi/axil_ctrl.v $root/target/kv260/axi/suaratb_axil_top.sv
+lappend files $root/target/kv260/axi/rtl/axil_ctrl.v $root/target/kv260/axi/rtl/suaratb_axil_top.sv
 
 create_project -force kv260 $OUT/proj -part $PART
 if {[file isdirectory $BOARD_REPO]} {
@@ -47,10 +47,10 @@ add_files -norecurse $OUT/suaratb_axil_ip.v
 set_property file_type SystemVerilog [get_files -filter {NAME =~ *.sv}]
 update_compile_order -fileset sources_1
 set ::env(CORE_MHZ) $CORE_MHZ
-source $root/target/kv260/create_bd_axil.tcl
+source $root/target/kv260/axi/flow/create_bd_axil.tcl
 make_wrapper -files [get_files kv260_axil.bd] -top
 add_files -norecurse [glob $OUT/proj/kv260.gen/sources_1/bd/kv260_axil/hdl/kv260_axil_wrapper.v]
-add_files -fileset constrs_1 -norecurse $root/target/kv260/kv260_axil.xdc
+add_files -fileset constrs_1 -norecurse $root/target/kv260/axi/flow/kv260_axil.xdc
 set_property top kv260_axil_wrapper [current_fileset]
 update_compile_order -fileset sources_1
 generate_target all [get_files kv260_axil.bd]

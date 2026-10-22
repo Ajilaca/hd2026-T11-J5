@@ -1,6 +1,6 @@
 """Siapkan berkas sintesis untuk satu nilai P di <out>: paket konfigurasi CNN + ROM bobot (model terlatih bila ada).
 
-    python target/artix7/prep_synth.py --p 16 --out /data/suaratb/build/synth/P16 [--model <qmodel.npz>]
+    python target/common/prep_synth.py --p 16 --out /data/suaratb/build/synth/P16 [--model <qmodel.npz>]
 Keluaran: cnn_cfg_pkg.sv, cnn_wrom.mem, cnn_bias.mem, cnn_rq.mem. Tidak menyentuh rtl/ maupun tb/.
 """
 import argparse

@@ -16,7 +16,7 @@
 // Antarmuka : AXI4-Lite satu clock (clk); satu transaksi tulis dan satu baca pada satu waktu (tanpa pipeline).
 //             AW dan W boleh datang dalam urutan apa pun; BRESP/RRESP selalu OKAY.
 // Latensi   : tulis: 2 siklus setelah AW dan W diterima (+ penahanan DS_GAP); baca: 1 siklus setelah AR.
-// Referensi : semantik register sama dengan rtl/sys/csr.sv; aliran dataset sama dengan rtl/sys/uart_bridge.sv.
+// Referensi : semantik register sama dengan csr versi UART lama (dihapus; riwayat git); aliran dataset sama dengan jalur dataset versi UART lama
 module axil_ctrl #(
   parameter DS_GAP    = 416,
   parameter N_SAMPLES = 8240

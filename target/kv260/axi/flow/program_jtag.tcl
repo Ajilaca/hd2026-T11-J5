@@ -1,5 +1,5 @@
 # Memprogram PL KV260 dari laptop lewat kabel micro-USB (JTAG pada FT4232H di carrier card) memakai Vivado Hardware Manager.
-#   BIT=/data/suaratb/build/kv260/axil_P32/suaratb_axil_P32.bit vivado -mode batch -source target/kv260/program_jtag.tcl
+#   BIT=/data/suaratb/build/kv260/axil_P32/suaratb_axil_P32.bit vivado -mode batch -source target/kv260/axi/flow/program_jtag.tcl
 # Prasyarat satu kali (butuh sudo): aturan udev kabel Xilinx
 #   sudo /data/tools/Xilinx/2026.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/install_drivers
 # lalu cabut dan colok ulang kabel micro-USB. Papan harus menyala dan PS sudah boot (Linux) agar pl_clk0 berjalan; rangkaian

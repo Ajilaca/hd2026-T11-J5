@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Kemas bitstream KV260 menjadi aplikasi xmutil (Ubuntu Kria): <nama>.bit.bin + <nama>.dtbo + shell.json.
-# Dari ROOT repo: target/kv260/make_app.sh [P]     (default P=32; masukan $SUARATB_DATA/build/kv260/full_P<P>/kv260_top_P<P>.bit)
+# Dari ROOT repo: target/kv260/axi/flow/make_app.sh [P]     (default P=32; masukan $SUARATB_DATA/build/kv260/full_P<P>/kv260_top_P<P>.bit)
 # Keluaran: $SUARATB_DATA/build/kv260/app/suaratb/  -> salin foldernya ke /lib/firmware/xilinx/ di papan, lalu
 #           sudo xmutil unloadapp && sudo xmutil loadapp suaratb
 # Overlay: muat bitstream ke region fpga_full, nyalakan PL0_REF (zynqmp_clk 71) ~100 MHz lewat driver xlnx,fclk,
