@@ -11,8 +11,8 @@ Direktori mengikuti pengelompokan `rtl/`:
 | `detect/` | `test_cough_det.py` |
 | `dsp/` | `test_window.py`, `test_fft512.py`, `test_power.py`, `test_mel.py`, `test_log_q.py`, `test_quant.py`, `test_feat_buf.py`, `test_dsp_chain.py` |
 | `cnn/` | `test_requant.py`, `test_gap.py`, `test_cnn_top.py`, `test_cnn_sweep.py`, `test_cnn_trained.py` (bobot acak, sapuan P, bobot terlatih) |
-| `sys/` | `test_uart.py`, `test_top.py` (ujung ke ujung: dataset dan mikrofon) |
-| `common/` | Harness: runner, pemuat vektor, model UART, model golden |
+| `sys/` | `test_axil.py` (ujung ke ujung lewat AXI4-Lite: register, jarak sampel, dataset, mikrofon) |
+| `common/` | Harness: runner, pemuat vektor, model golden |
 | `vectors/` | Vektor uji sintetis dari golden |
 
 `test_cnn_trained.py` dan `test_top.py` dapat memakai model terlatih dari `$SUARATB_DATA/runs/<nama>` lewat variabel lingkungan

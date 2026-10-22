@@ -1,0 +1,56 @@
+// suaratb_axil_ip: pembungkus Verilog murni untuk referensi modul di Vivado block design (kv260_axil).
+// Berkas ini adalah TEMPLATE: synth_axil.tcl mengganti @TOKEN@ (jalur .mem dan CLK_PER_BCLK) lalu menulis suaratb_axil_ip.v
+// ke direktori keluaran. Berisi sinkronisasi reset dan masukan I2S, lalu suaratb_axil_top.
+// Antarmuka : s_axi_* (AXI4-Lite, 12 bit alamat) terinferensi sebagai interface s_axi oleh IP integrator;
+//             i2s_bclk/i2s_ws/i2s_sd, led_busy/led_rec ke pin; irq = result_new.
+`timescale 1ns / 1ps
+module suaratb_axil_ip (
+  input  wire        s_axi_aclk,
+  input  wire        s_axi_aresetn,
+  input  wire [11:0] s_axi_awaddr,
+  input  wire        s_axi_awvalid,
+  output wire        s_axi_awready,
+  input  wire [31:0] s_axi_wdata,
+  input  wire [3:0]  s_axi_wstrb,
+  input  wire        s_axi_wvalid,
+  output wire        s_axi_wready,
+  output wire [1:0]  s_axi_bresp,
+  output wire        s_axi_bvalid,
+  input  wire        s_axi_bready,
+  input  wire [11:0] s_axi_araddr,
+  input  wire        s_axi_arvalid,
+  output wire        s_axi_arready,
+  output wire [31:0] s_axi_rdata,
+  output wire [1:0]  s_axi_rresp,
+  output wire        s_axi_rvalid,
+  input  wire        s_axi_rready,
+  output wire        i2s_bclk,
+  output wire        i2s_ws,
+  input  wire        i2s_sd,
+  output wire        led_busy,
+  output wire        led_rec,
+  output wire        irq
+);
+  (* ASYNC_REG = "TRUE" *) reg [1:0] rst_sync = 2'b00;
+  (* ASYNC_REG = "TRUE" *) reg [1:0] sd_sync  = 2'b00;
+  always @(posedge s_axi_aclk or negedge s_axi_aresetn) begin
+    if (!s_axi_aresetn) rst_sync <= 2'b00;
+    else                rst_sync <= {rst_sync[0], 1'b1};
+  end
+  always @(posedge s_axi_aclk) sd_sync <= {sd_sync[0], i2s_sd};
+
+  suaratb_axil_top #(
+    .CLK_PER_BCLK(@CLK_PER_BCLK@),
+    .INIT_W("@INIT_W@"), .INIT_B("@INIT_B@"), .INIT_RQ("@INIT_RQ@"),
+    .INIT_WIN("@INIT_WIN@"), .INIT_COS("@INIT_COS@"), .INIT_SIN("@INIT_SIN@"),
+    .INIT_MEL("@INIT_MEL@"), .INIT_LOG("@INIT_LOG@")
+  ) u_core (
+    .clk(s_axi_aclk), .rst_n(rst_sync[1]),
+    .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
+    .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb), .s_axi_wvalid(s_axi_wvalid), .s_axi_wready(s_axi_wready),
+    .s_axi_bresp(s_axi_bresp), .s_axi_bvalid(s_axi_bvalid), .s_axi_bready(s_axi_bready),
+    .s_axi_araddr(s_axi_araddr), .s_axi_arvalid(s_axi_arvalid), .s_axi_arready(s_axi_arready),
+    .s_axi_rdata(s_axi_rdata), .s_axi_rresp(s_axi_rresp), .s_axi_rvalid(s_axi_rvalid), .s_axi_rready(s_axi_rready),
+    .bclk(i2s_bclk), .ws(i2s_ws), .sd(sd_sync[1]), .led_busy(led_busy), .led_rec(led_rec), .irq(irq)
+  );
+endmodule

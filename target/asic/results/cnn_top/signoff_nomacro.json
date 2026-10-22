@@ -1,0 +1,7 @@
+{
+ "xor_nomacro": 0,
+ "klayout_drc_nomacro": 0,
+ "xor_nomacro_layer": {},
+ "klayout_drc_nomacro_rule": {},
+ "ok": true
+}

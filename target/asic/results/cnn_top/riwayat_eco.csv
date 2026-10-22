@@ -1,0 +1,10 @@
+putaran,run,cara,kapasitansi,antena,lvs,routing_drc,signoff_xor,signoff_drc_klayout,timing
+dasar,p16_10m,alur penuh CLOCK_PERIOD 97.656 ns,147,43,,,,,1 pelanggaran hold TT/FF
+1,p16_10m_eco,ECO buffer kapasitansi + GRT ulang + repair_antennas + jumper met1 (222 sel),11,38,0,0,0,0,bersih
+2,p16_10m_eco2,ECO kapasitansi kecil + hold + antena (21 sel),2,17,0,0,0,0,bersih
+3,p16_10m_eco3,ECO (2 sel + 1 buffer hold),1,31,0,0,0,0,bersih
+4,p16_10m_eco4,ECO + jumper kumulatif 87 net,0,12,0,0,0,0,bersih
+5,p16_10m_eco5,dioda tanpa GRT ulang (12 dioda),2,5,0,0,0,0,bersih
+6,p16_10m_eco6,dioda + buffer pin makro + perbesar sel tanpa GRT ulang,1,3,0,0,0,0,bersih
+7,p16_10m_eco7,dioda + buffer pin makro tanpa GRT ulang,2,4,0,0,0,0,bersih
+8,p16_10m_eco8,buffer pemecah beban + dioda + jumper tanpa GRT ulang,0,0,0,0,0,0,bersih

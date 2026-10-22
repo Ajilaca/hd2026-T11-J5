@@ -236,8 +236,8 @@ Kuantisasi dan hardware (murid + probe terlipat menjadi FC 16->1; PTQ tanpa labe
 Korelasi logit float vs int8 per lipatan 0,955-0,987 (lebih rendah dari `model_v2`, 0,991-0,999). Model akhir (murid pada semua klip,
 probe pada semua peserta): korelasi 0,988; puncak akumulator 138.084 (batas 24 bit 8.388.608). RTL `cnn_top` dengan bobot ini
 **bit-exact terhadap golden pada 8 klip nyata** (Icarus, P=16, 2026-10-12). Bobot di `$SUARATB_DATA/runs/model_distill` (tidak di-commit).
-`suaratb_top` dengan bobot ini juga **bit-exact terhadap golden** pada mode dataset (UART, 2 kasus) dan mode mikrofon
-(I2S -> detektor -> DSP -> CNN -> UART), Icarus, 2026-10-12. Belum dilakukan: sintesis ulang dengan bobot ini (ROM berukuran sama; sumber daya diperkirakan identik).
+`suaratb_top` (versi UART, dihapus pada 2026-10-22, K-34) dengan bobot ini juga **bit-exact terhadap golden** pada mode dataset (2 kasus) dan mode mikrofon
+(I2S -> detektor -> DSP -> CNN), Icarus, 2026-10-12. Penerusnya, `suaratb_axil_top` (host AXI4-Lite), dengan bobot ini bit-exact terhadap golden di papan KV260 pada 100 peserta (968 klip, 2026-10-22; `tb/sys/test_axil.py` lulus di simulasi). Sintesis dengan bobot ini: `docs/vault/sintesis.md`.
 
 ## 6. Batasan (wajib dibawa ke proposal)
 1. **Tidak ada klaim akurasi klinis.** AUROC batuk-saja tidak dapat dibedakan dari nol permutasi; setelah jenis kelamin dan
@@ -278,3 +278,60 @@ Yang TIDAK dijamin :
   (1.105 peserta, 297 positif), jadi layak dicoba pasca-hackathon.
 Jadi dataset tambahan adalah jalur penguatan yang masuk akal pasca-hackathon, bukan alasan untuk mengklaim akurasi sekarang.
 
+
+## 9. Pengambilan sampel dan konfigurasi demo
+
+**Dari rekaman ke klip.** Tiap peserta Zambia direkam dengan beberapa perangkat (ponsel A, B, C dan perekam); satu berkas WAV per perangkat berisi rangkaian batuk.
+Rekaman dipotong oleh detektor batuk yang sama dengan perangkat keras (golden `cough_det`, padanan RTL): energi per hop 160 sampel (10 ms), lantai derau EMA
+(`N += (E - N) / 64`), pemicu `E > 8N` selama minimal 2 hop, lalu segmen 50 frame (5 sebelum onset, 45 sesudahnya; 8.240 sampel, sekitar 0,5 s audio ditambah ekor nol),
+dan jeda 300 ms sebelum batuk berikutnya. Satu batuk yang terdeteksi menjadi satu klip. Demo memakai **ponsel C saja**.
+
+**Jumlah klip per peserta.** Pada 100 peserta paket demo, detektor menghasilkan 6 sampai 25 klip per peserta. Paket memakai **10 klip pertama** menurut urutan rekaman;
+80 peserta memiliki 10 klip atau lebih, 20 peserta memiliki 6 sampai 9 klip dan semuanya dipakai (tidak ada klip yang diulang). Skor audio peserta adalah **rata-rata logit** klipnya.
+Dasar pemilihan 10 (349 peserta, 58 positif): AUROC audio 1 klip 0,52; 6 klip 0,63; 10 klip 0,72. Menambah klip melewati sekitar 10 (semua klip, ponsel A+B+C, 30-40 klip) dan cara agregasi lain
+(median, terpangkas, 50% tertinggi, buang klip buruk) tidak terbukti lebih baik karena CI mencakup 0 (K-32, K-33).
+
+**Fusi dengan gejala.** Lima gejala (lama batuk, BMI, jenis kelamin, penurunan berat badan, keringat malam). Model gejala dilatih pada 1.479 peserta tanpa audio; skor gabungan adalah regresi
+logistik atas [skor gejala, rata-rata logit] dengan koefisien out-of-fold (tanpa kebocoran). Perhitungan di host (ARM papan), bukan di FPGA. Ambang dipilih untuk sensitivitas sekitar 90% pada data yang sama
+(optimistis): gejala + audio spesifisitas 49,5% (349 peserta); audio saja 28,5%.
+
+**Paket data demo.** 100 peserta ponsel C (50 TB, 50 bukan TB; acak, seed 0) dengan logit golden per klip. Subset berimbang N/2 positif + N/2 negatif (urut kode peserta) tersedia untuk uji cepat.
+Gejala peserta diambil dari metadata dataset (tidak ditanyakan).
+
+| Mode | Masukan | Keputusan |
+|---|---|---|
+| Dataset, audio saja | klip peserta lewat AXI4-Lite | rata-rata logit >= -24 -> RUJUK |
+| Dataset, audio + gejala | klip + gejala dari metadata | skor gabungan >= -2,46 -> RUJUK |
+| Mikrofon INMP441, audio saja | sesi 10 batuk yang dideteksi detektor di FPGA | rata-rata logit >= 35 (bawaan; data ponsel, sensitivitas sekitar 80%, spesifisitas sekitar 41%) |
+| Mikrofon, audio + gejala | 6 pertanyaan (lama batuk, jenis kelamin, berat, tinggi, berat turun, keringat malam), lalu 10 batuk | skor gabungan >= -2,46 -> RUJUK |
+| Model demonstrasi batuk vs bukan batuk (K-29) | klip dataset atau mikrofon, bobot berbeda | logit >= 0 -> batuk |
+
+Mode dataset dan mikrofon memakai perangkat keras yang sama; hanya sumber sampel yang berbeda. Alat triase, bukan diagnosis; ambang bukan hasil kalibrasi untuk INMP441 dan dipilih pada data yang sama.
+
+**Hasil terukur di papan** (100 peserta, 968 klip, audio + gejala, ambang bawaan): AUROC 0,779 (audio saja 0,673, gejala saja 0,774); sensitivitas 88%, spesifisitas 38%; keluaran FPGA bit-exact terhadap
+golden pada 968/968 klip; latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python). Di mode mikrofon, perangkat hanya memiliki satu mikrofon sehingga rata-rata lintas ponsel tidak berlaku.
+
+## 10. Model verifikasi sistem: batuk vs bukan batuk (K-29)
+
+**Tujuan.** Model TBC lemah (AUROC audio sekitar 0,7), sehingga hasil TBC sendiri tidak dapat membuktikan bahwa sistemnya benar. Model verifikasi ini memakai **arsitektur dan perangkat keras yang sama**
+(log-mel 40 x 50, CNN 16/32/32, GAP, FC 32-16-1, int8, tanpa perubahan RTL) tetapi dilatih untuk tugas yang sinyalnya jelas. Bila rantai alat (sampel -> detektor -> fitur -> CNN di FPGA -> keputusan) menghasilkan keputusan yang benar
+dan identik dengan golden pada tugas ini, kelemahan model TBC berasal dari informasi di data, bukan dari alat. Ini bukan model TBC dan tidak boleh dikutip sebagai kinerja skrining.
+
+**Proses.**
+1. **Data.** Positif: 6.354 klip batuk Zambia (364 peserta, hasil detektor yang sama). Negatif: 4.890 klip Speech Commands v0.02 test set (CC BY 4.0; 11 kata dan `_silence_`), dipotong dengan detektor golden yang sama
+   (memicu pada 90,6%; sisanya memakai jendela di sekitar energi puncak), lalu diubah menjadi fitur yang sama.
+2. **Pembagian.** 20% peserta Zambia dan 20% pembicara Speech Commands (seed 0) menjadi UJI dan tidak dilihat saat pelatihan: 1.272 klip batuk dan 1.063 klip bukan batuk. Latih 8.909 klip.
+3. **Pelatihan.** Float, 20 epoch, hiperparameter tetap (tidak dipilih berdasarkan data uji), BCE dengan bobot kelas, augmentasi gain/geser/SpecAugment.
+4. **Kuantisasi dan cek golden.** PTQ int8 lalu evaluasi dengan golden bit-exact; kriteria penurunan AUROC <= 0,02 (K-21). Puncak akumulator 151.669 (batas 24 bit 8.388.608).
+5. **ROM dan bitstream.** Bobot menjadi ROM (`prep_synth`), build sistem AXI4-Lite P32 pada sekitar 300 MHz (LUT 8.530, FF 11.044, BRAM 11,5, WNS +0,122 ns, daya total 2,964 W estimasi Vivado), dikemas sebagai aplikasi
+   xmutil terpisah dari model TBC (sama-sama P32, hanya bobot ROM berbeda).
+6. **Paket uji.** 100 klip dari UJI: 50 batuk (peserta uji, ponsel C) dan 50 bukan batuk (pembicara uji), dengan logit golden.
+7. **Uji di papan.** Klip dikirim lewat AXI4-Lite dan logit dibandingkan dengan golden; mikrofon INMP441 live mencetak satu keputusan per suara.
+
+**Hasil di laptop** (UJI, int8 golden): AUROC 0,9989; akurasi 99,1% pada ambang logit 0 (batuk terdeteksi 99,4%, bukan batuk ditolak 98,8%; per kata 95,5% sampai 100%). Penurunan akibat kuantisasi 0,0000.
+
+**Hasil terukur di papan.** 100 klip uji: keluaran FPGA **bit-exact terhadap golden pada 100/100 klip**; **99/100 klip benar** (batuk 50/50, bukan batuk 49/50; satu klip kata "no" salah dinilai batuk);
+latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python). Mikrofon live: 161 suara tercatat dengan 76 dinilai batuk; jenis suara sebenarnya tidak dicatat, sehingga **akurasi mikrofon belum terukur**.
+
+**Batas klaim.** Batuk berasal dari ponsel Zambia dan bicara dari dataset berbahasa Inggris (perangkat, ruang, dan bahasa berbeda), sehingga sebagian pemisahan bisa berasal dari perbedaan sumber rekaman.
+Hasil ini membuktikan rantai alat bekerja dan identik dengan golden pada tugas yang jelas; tidak membuktikan kemampuan mendeteksi TBC maupun generalisasi, dan belum dikalibrasi untuk INMP441.

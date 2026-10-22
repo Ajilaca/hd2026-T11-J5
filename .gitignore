@@ -1,6 +1,6 @@
 CLAUDE.md
 SETUP.md
-scripts/
+/scripts/
 
 # --- Data & hasil pelatihan (lisensi dataset) ---
 /data/
@@ -69,7 +69,12 @@ target/**/work/
 *.json.gz
 
 # --- Alat konteks ---
-graphify-out/
+# graphify-out/ ikut di-commit (graf repo untuk yang meng-clone); cache dan path lokal tidak
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_*.json
+!graphify-out/.graphify_labels.json
 .obsidian/
 
 # --- Sistem ---
@@ -81,3 +86,10 @@ clockInfo.txt
 requirements.txt
 docs/result/build_pdf.py
 docs/result/build_report.py
+
+# --- graphify (graf repo, dibangkitkan ulang oleh /graphify) ---
+graphify-out/
+# Paket hasil layout ASIC (774 MB): diunduh dari GitHub Release, hanya README dan metrics.csv yang dilacak
+target/asic/layout/*
+!target/asic/layout/README.md
+!target/asic/layout/metrics.csv

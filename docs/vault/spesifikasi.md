@@ -53,9 +53,9 @@ selama ≥ 2 frame; segmen = onset-5 .. onset+44; N dibekukan saat merekam; refr
 ## Antarmuka sistem (Fase 5, `rtl/sys/`)
 | Item | Nilai |
 |---|---|
-| Masukan sampel | mode 1: I2S INMP441 (FPGA master, BCLK clk/96); mode 0: UART dataset |
-| UART | 8N1, `CLK_PER_BIT` = clk/baud (853 -> 115200 pada 98,304 MHz; 1280 pada 147,456 MHz, K-22); tanpa FIFO: 2 byte/sampel harus >= 404 siklus |
-| Perintah host -> alat | `'W' addr data` tulis CSR; `'R' addr` balasan 1 byte; `'D'` + 8240 x int16 LE = klip dataset |
+| Masukan sampel | mode 1: I2S INMP441 (FPGA master, BCLK clk/96); mode 0: dataset lewat AXI4-Lite |
+| Host | AXI4-Lite 32 bit, alamat 12 bit; `DS_DATA` menahan jarak sampel `DS_GAP` = 416 siklus (>= 404, kontrak `frame_buf`); peta register di `target/kv260/axi/rtl/axil_ctrl.v`. UART dihapus 2026-10-22 (K-34) |
+| Perintah host -> alat | tulis/baca register AXI4-Lite: CTRL, STATUS, RESULT, VERSION, NSAT, FRAMES, DS_CTRL, DS_DATA, NSAMP |
 | Hasil alat -> host | `'L' lo hi seq` (4 byte) tiap inferensi: logit int16 per batuk (rata-rata 3-5 batuk di host) |
 | CSR | 0x00 CTRL (bit0 mode, bit1 clear), 0x01 STATUS, 0x02-03 LOGIT, 0x04 SEQ, 0x05-06 NSAT, 0x07 VERSION, 0x08-09 FRAMES |
 | Alur | sampel -> preemph -> frame_buf -> dsp_chain -> feat_buf -> cnn_top -> logit; frame_buf.e -> cough_det -> segmen |
