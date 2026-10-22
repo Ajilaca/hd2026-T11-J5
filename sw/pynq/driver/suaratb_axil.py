@@ -5,11 +5,11 @@ Pemakaian di papan (Ubuntu Kria dengan PYNQ terpasang; berkas .bit dan .hwh bern
   sudo -E python3 suaratb_axil.py --bit ~/suaratb_axil_P32.bit --clip a.wav --expect-model qmodel.npz --repo ~/suaratb
   sudo -E python3 suaratb_axil.py --bit ~/suaratb_axil_P32.bit --mic --listen 3        # mode mikrofon INMP441
   sudo -E python3 suaratb_axil.py --bit ~/suaratb_axil_P32.bit --info                  # VERSION, jumlah sampel, status
-Alur satu klip (sama dengan mode dataset UART): CTRL.mode=0 -> DS_CTRL=1 -> 8240 x DS_DATA -> tunggu STATUS.result_new -> RESULT.
+Alur satu klip: CTRL.mode=0 -> DS_CTRL=1 -> 8240 x DS_DATA -> tunggu STATUS.result_new -> RESULT.
 Penahanan jarak sampel dilakukan perangkat keras (tulisan DS_DATA ditunda), jadi tidak ada penundaan di sisi perangkat lunak.
 Keluaran adalah logit int16 mentah dan rata-ratanya; BELUM ADA kalibrasi ke probabilitas. Alat ini triase (prioritas rujukan ke tes
 TCM/dahak), bukan diagnosis; --threshold hanya membandingkan rata-rata logit dengan ambang yang Anda berikan.
-Peta register: target/kv260/axi/axil_ctrl.sv. Alamat dasar bawaan 0xA000_0000 (M_AXI_HPM0_FPD, create_bd_axil.tcl).
+Peta register: target/kv260/axi/rtl/axil_ctrl.v. Alamat dasar bawaan 0xA000_0000 (M_AXI_HPM0_FPD, create_bd_axil.tcl).
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ def load_wav(path: str) -> np.ndarray:
 
 
 def to_clip(x: np.ndarray, n: int, window: str = "first") -> np.ndarray:
-    """Potong atau isi nol ke n sampel. window='first' (sama dengan sw/host/host.py) atau 'loudest' (jendela n sampel berenergi terbesar)."""
+    """Potong atau isi nol ke n sampel. window='first' atau 'loudest' (jendela n sampel berenergi terbesar)."""
     x = np.asarray(x).astype(np.int64).ravel()
     if x.size > n and window == "loudest":
         c = np.concatenate([[0], np.cumsum(x * x)])

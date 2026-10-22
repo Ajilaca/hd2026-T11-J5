@@ -1,6 +1,6 @@
 """Ambang SEMENTARA untuk kolom risiko (jalankan di laptop, dari ROOT repo, dengan .venv).
 
-    python -m sw.pynq.calibrate_ambang --device phonec --sens 0.90
+    python -m sw.pynq.laptop.calibrate_ambang --device phonec --sens 0.90
 Logit golden (qmodel yang sama dengan ROM bitstream) dihitung untuk klip pertama tiap peserta; ambang = logit terendah yang masih
 meloloskan --sens dari peserta positif (persentil ke-(1-sens) logit positif). Keluaran: all_logits.csv dan ambang.json.
 BATAS KLAIM: ambang dipilih pada data yang sama dengan evaluasi dan model akhir mungkin pernah melihat peserta ini, jadi

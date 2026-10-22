@@ -1,5 +1,5 @@
 """Uji driver suaratb_axil.py tanpa papan: MMIO tiruan dengan peta register yang sama dengan axil_ctrl.sv; logit dari golden.
-    python -m pytest sw/pynq/test_suaratb_axil.py -q
+    python -m pytest sw/pynq/driver/test_suaratb_axil.py -q
 """
 import pathlib
 import struct
@@ -9,9 +9,9 @@ import wave
 import numpy as np
 import pytest
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "sw" / "pynq"))
+sys.path.insert(0, str(ROOT / "sw" / "pynq" / "driver"))
 
 import suaratb_axil as S                      # noqa: E402
 from golden import params                     # noqa: E402
