@@ -1,5 +1,5 @@
 """Layout OpenLane (sky130A, 25 ns) untuk cnn_top dengan RAM = makro SRAM sky130 (wrapper target/asic/ram/ram_sdp_sky130.sv).
-Dari ROOT repo: WROM=sram P=16 python target/asic/layout_cnn_macro.py [tag]
+Dari ROOT repo: WROM=sram P=16 python target/asic/scripts/layout_cnn_macro.py [tag]
   env: P (16/32), SV2V (path sv2v, bawaan: sv2v di PATH), DOCKER_MEM, DOCKER_CPUS, CLK_NS, STA_THREADS, KLAYOUT_THREADS,
        SKIP_STEPS (id langkah OpenLane dipisah koma, mis. "Magic.WriteLEF,Odb.CheckDesignAntennaProperties"), TRDRC_ERR.
   butuh: Docker + citra openlane2 2.3.10, PDK sky130A lewat volare di ~/.volare, $SUARATB_DATA/build/synth/P<P>/
@@ -11,7 +11,7 @@ from __future__ import annotations
 import json, os, pathlib, shutil, subprocess, sys
 
 D = pathlib.Path(os.environ.get("SUARATB_DATA", "/data/suaratb"))
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 P = int(os.environ.get("P", "16"))
 WROM = os.environ.get("WROM") == "sram"   # ROM bobot sebagai 8 makro SRAM + port muat wl_* (ram/wrom_sky130.sv, ram/patch_wrom.py)
 TAG = sys.argv[1] if len(sys.argv) > 1 else (f"p{P}" if WROM else "m1")

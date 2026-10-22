@@ -1,15 +1,15 @@
 """Kumpulkan hasil layout modul dari $SUARATB_DATA/build/asic ke repo dan (opsional) paket serah-terima.
-Dari ROOT repo: python target/asic/collect_results.py [--pack]
+Dari ROOT repo: python target/asic/scripts/collect_results.py [--pack]
   repo  : target/asic/results/metrics/<layout>.json (salinan final/metrics.json) + target/asic/results/metrics.csv (ringkasan)
   --pack: $SUARATB_DATA/handoff/suaratb_asic_layout.zip berisi final/{gds,def,nl,pnl,sdc,spef/nom,lef,lib,metrics.*} per layout
-          (berkas internal OpenLane seperti odb, mag, sdf tidak ikut). PNG berlabel layer: target/asic/render_layout.py.
+          (berkas internal OpenLane seperti odb, mag, sdf tidak ikut). PNG berlabel layer: target/asic/scripts/render_layout.py.
 Satu run per layout di runs/ (c1, c2, atau fix); bila lebih dari satu, run dengan final/metrics.json terbaru dipakai.
 """
 from __future__ import annotations
 import csv, json, os, pathlib, shutil, sys, zipfile
 
 D = pathlib.Path(os.environ.get("SUARATB_DATA", "/data/suaratb"))
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 LAYOUTS = ["i2s_rx", "preemph", "gap", "window", "log_q", "cough_det", "power", "mel",
            "requant", "requant_P32", "pe_array", "pe_array_P32"]
 COLS = {  # kolom csv: kunci metrics.json OpenLane

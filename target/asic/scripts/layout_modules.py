@@ -1,4 +1,4 @@
-"""Layout OpenLane (sky130A) untuk modul tanpa RAM. Dari ROOT repo: python target/asic/layout_modules.py [modul ...]
+"""Layout OpenLane (sky130A) untuk modul tanpa RAM. Dari ROOT repo: python target/asic/scripts/layout_modules.py [modul ...]
 Per modul: sv2v -> Verilog, config OpenLane (clock 25 ns = 40 MHz (env CLK_NS), utilisasi inti 30%), jalankan OpenLane di Docker
 (satu per satu). Bila pin melebihi keliling die (PPL-0024) die diperbesar sesuai saran alat dan dijalankan ulang.
 Hasil: $SUARATB_DATA/build/asic/<modul>/runs/<tag>/ ; ringkasan angka ke stdout (dari metrics.json).
@@ -8,7 +8,7 @@ from __future__ import annotations
 import json, math, os, pathlib, re, shutil, subprocess, sys
 
 D = pathlib.Path(os.environ.get("SUARATB_DATA", "/data/suaratb"))
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 SV2V = os.environ.get("SV2V") or shutil.which("sv2v") or "/data/tools/sv2v/sv2v-Linux/sv2v"
 IMG = "ghcr.io/efabless/openlane2:2.3.10"
 PKG = ["rtl/common/suaratb_pkg.sv"]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Studi kelayakan ASIC tingkat 1: sintesis Yosys ke sel standar sky130_fd_sc_hd (tt_025C_1v80), area dari liberty. Dari ROOT repo:
-#   target/asic/synth_sky130.sh 16     (butuh $SUARATB_DATA/build/synth/P16 dari target/prep_synth.py)
+#   target/asic/scripts/synth_sky130.sh 16     (butuh $SUARATB_DATA/build/synth/P16 dari target/prep_synth.py)
 # Dua jalan: "full" = semua memori jadi flip-flop; "logic" = ram_sdp dijadikan blackbox (area logika + ROM tanpa RAM).
 # Selisih full-logic = biaya RAM sebagai flip-flop. Jumlah bit RAM dibaca dari sel $mem_v2. RTL tidak diubah. Hanya studi area; tanpa timing/P&R.
 set -eu

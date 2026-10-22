@@ -1,5 +1,5 @@
 """Render GDSII sky130 ke PNG dengan layer berlabel singkat + legenda. Dari ROOT repo:
-  python target/asic/render_layout.py <gds> <png> [lebar_px] [judul]
+  python target/asic/scripts/render_layout.py <gds> <png> [lebar_px] [judul]
 Layer (GDS lapisan/tipe, nama pendek): nwell 64/20, diff 65/20, tap 65/44, poly 66/20, licon 66/44, li1 67/20, mcon 67/44,
 met1 68/20, via1 68/44, met2 69/20, via2 69/44, met3 70/20, via3 70/44, met4 71/20, via4 71/44, met5 72/20. KLayout dijalankan di Docker.
 """

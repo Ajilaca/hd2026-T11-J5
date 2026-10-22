@@ -1,6 +1,6 @@
 CLAUDE.md
 SETUP.md
-scripts/
+/scripts/
 
 # --- Data & hasil pelatihan (lisensi dataset) ---
 /data/
@@ -89,3 +89,7 @@ docs/result/build_report.py
 
 # --- graphify (graf repo, dibangkitkan ulang oleh /graphify) ---
 graphify-out/
+# Paket hasil layout ASIC (774 MB): diunduh dari GitHub Release, hanya README dan metrics.csv yang dilacak
+target/asic/layout/*
+!target/asic/layout/README.md
+!target/asic/layout/metrics.csv
