@@ -17,7 +17,7 @@ Segmen itu masuk ke CNN: tiga lapis konvolusi 3x3 dengan ReLU dan MaxPool, lalu 
 Akselerator memakai skema output-stationary dengan P lane paralel, dan logitnya dibaca host lewat AXI4-Lite. Di sisi perangkat lunak host,
 logit dari beberapa batuk dirata-rata dan digabung dengan lima gejala klinis (`sw/pynq/`).
 
-![Arsitektur SuaraTB: mikrofon I2S ke skor risiko](docs/img/arsitektur.png)
+![Arsitektur SuaraTB: sampel dari mikrofon I2S atau host AXI4-Lite, preprocessing, DSP, deteksi batuk, CNN, dan skor](docs/img/arsitektur.png)
 
 Mode mikrofon memakai detektor batuk untuk memilih segmen; mode dataset memproses 50 frame pertama klip yang dikirim lewat AXI4-Lite
 (`target/kv260/axi/rtl/suaratb_axil_top.sv`).
