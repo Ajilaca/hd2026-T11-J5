@@ -128,6 +128,68 @@ Laporan lengkap ada di `docs/result/result.md` (dan `report.pdf`).
 Skrip papan di `sw/pynq/papan/` menjalankan lima mode: dataset (audio saja, dan audio + gejala), mikrofon (audio saja, dan audio + gejala), serta model verifikasi batuk vs bukan batuk. Cara pengambilan sampel
 (10 klip per peserta, detektor batuk, rata-rata logit) dan hasil terukurnya ada di `docs/vault/model.md` §9 dan §10; pintasan terminal di `sw/pynq/papan/setup_papan.sh`.
 
+## Menjalankan di papan (KV260)
+
+**1. Konsol serial dari laptop** (kabel micro-USB data; keluar dengan Ctrl+A lalu Ctrl+X):
+
+```bash
+sudo picocom -b 115200 --logfile ~/kv260_console.log /dev/ttyUSB1
+```
+
+**2. Pintasan di papan** (login `ubuntu`; sekali per sesi, lalu permanenkan):
+
+```bash
+source ~/suaratb10/setup_papan.sh
+```
+
+```bash
+echo 'source ~/suaratb10/setup_papan.sh' >> ~/.bashrc
+```
+
+```bash
+papan_bantuan
+```
+
+**3. Model TBC** (paket `~/suaratb10`; aplikasi PL `suaratb_axil` dimuat otomatis):
+
+```bash
+axil1 --n 20
+axil2 --n 50
+mic1
+mic2
+```
+
+`axil1` dan `axil2` memproses klip dataset (tanpa `--n` memakai 100 peserta). `mic1` dan `mic2` memakai mikrofon INMP441 (sesi 10 batuk; `mic2` menanyakan 6 gejala dulu).
+
+**4. Model batuk vs bukan batuk** (paket `~/cough`; aplikasi PL `suaratb_cough` dimuat otomatis):
+
+```bash
+cough1 --n 20
+cough_mic
+```
+
+**5. Pindah paket atau model:**
+
+```bash
+SUARATB_TBC=~/suaratb6 axil2 --n 20
+```
+
+```bash
+export SUARATB_TBC=~/suaratb6
+```
+
+```bash
+papan_status
+```
+
+```bash
+sudo xmutil unloadapp && sudo xmutil loadapp suaratb_cough
+```
+
+Dua perintah pertama memakai paket lain (ganti `suaratb6` dengan nama folder paket yang ada). Perintah `xmutil` hanya untuk pindah manual; skrip melakukannya sendiri.
+
+Isi dan hasil tiap mode: `docs/vault/model.md` §9 dan §10.
+
 ## Keterbatasan
 
 - SuaraTB dimaksudkan untuk mendukung triase dan prioritas rujukan ke pemeriksaan lanjutan, bukan untuk mendiagnosis TBC.
@@ -159,7 +221,7 @@ Setiap direktori punya `README.md` sendiri.
 ## Dokumen
 
 Baca berurutan: `docs/vault/status-fase.md`, `docs/vault/spesifikasi.md`, `docs/vault/keputusan.md`. Indeks: `docs/CONTEXT_INDEX.md`.
-Perintah build dan tes ada di `Makefile` (`make help`) dan docstring skrip; README tidak mengulangnya.
+Perintah build dan tes ada di `Makefile` (`make help`) dan docstring skrip; README hanya memuat perintah untuk menjalankan demo di papan.
 
 ## Referensi
 
