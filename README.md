@@ -46,34 +46,11 @@ disimpan di luar repo (`$SUARATB_DATA`, awal `/data/suaratb`).
 
 Ada dua hal yang perlu dibedakan dalam mengevaluasi SuaraTB: apakah implementasi hardware bekerja sesuai model referensi, dan apakah modelnya cukup baik untuk membantu skrining TBC.
 
-Pada sisi hardware, hasil verifikasi menunjukkan bahwa RTL menghasilkan keluaran yang sesuai dengan model referensi pada pengujian yang telah dilakukan. Sintesis untuk target AMD/Xilinx Artix-7 juga menunjukkan bahwa desain dapat mencapai 150 MHz pada konfigurasi yang diuji. Desain juga dibangun sebagai sistem AXI4-Lite untuk papan Kria KV260 (XCK26) dan dijalankan di papan; hasil papan ada di bagian Hardware.
+Pada sisi hardware, hasil verifikasi menunjukkan bahwa RTL menghasilkan keluaran yang sesuai dengan model referensi pada pengujian yang telah dilakukan. Desain juga dibangun sebagai sistem AXI4-Lite untuk papan Kria KV260 (XCK26) dan dijalankan di papan; hasil papan ada di bagian Hardware.
 
 Pada sisi model, hasilnya masih terbatas. CNN yang dilatih dari awal menghasilkan AUROC sekitar 0,56, sehingga performanya belum menunjukkan kemampuan diskriminasi yang memadai. Eksperimen menggunakan embedding audio HeAR memberikan hasil yang lebih menjanjikan, tetapi peningkatan performa ketika ditambahkan ke fitur klinis belum meyakinkan. Dengan rata-rata 10 batuk per peserta dan lima gejala klinis, AUROC sekitar 0,80 pada 349 peserta (di papan, 100 peserta: 0,779), hampir seluruhnya berasal dari gejala. Karena itu, hasil saat ini belum mendukung penggunaan SuaraTB sebagai alat diagnosis maupun klaim bahwa target performa skrining WHO telah terpenuhi.
 
-### Hardware
-
-Vivado 2026.1, Artix-7 XC7A35T-1, out-of-context (tanpa I/O dan MMCM), setelah route, constraint 6,667 ns (150 MHz). Satu kali jalan per P, tanpa seed sweep. Sumber: `docs/vault/sintesis.md`.
-
-| P | LUT | FF | DSP48E1 | BRAM tile | WNS | Daya (vectorless) |
-|---|---|---|---|---|---|---|
-| 8 | 4.807 (23,1%) | 6.736 (16,2%) | 17 | 12 (24%) | +0,111 ns | 0,168 W |
-| 16 | 5.926 (28,5%) | 7.799 (18,8%) | 17 | 12 (24%) | +0,222 ns | 0,192 W |
-| 32 | 8.120 (39,0%) | 10.071 (24,2%) | 17 | 12 (24%) | +0,023 ns | 0,246 W |
-
-Pada 100 MHz, ketiga nilai P juga memenuhi timing. Clock inti yang dipakai di `target/` adalah 147,456 MHz (K-22).
-
-Latensi inferensi CNN dihitung dari jumlah siklus hasil simulasi (Icarus, dari `start` sampai `done`) dikali periode clock; ini
-angka turunan, bukan laporan alat. Sumber: `docs/vault/sintesis.md`.
-
-| P | Siklus, versi 100 MHz | Latensi @ 100 MHz | Siklus, versi 150 MHz | Latensi @ 150 MHz |
-|---|---|---|---|---|
-| 8 | 451.851 | 4,52 ms | 451.880 | 3,01 ms |
-| 16 | 226.490 | 2,26 ms | 226.520 | 1,51 ms |
-| 32 | 122.843 | 1,23 ms | 122.872 | 0,82 ms |
-
-Latensi ini hanya untuk CNN. Waktu yang dirasakan pengguna didominasi pengambilan 0,5 s audio.
-
-### Hardware: Kria KV260 (XCK26-SFVC784-2LV-C)
+### Hardware (Kria KV260, XCK26-SFVC784-2LV-C)
 
 Sistem AXI4-Lite (PS, SmartConnect, MMCM, inti SuaraTB), bobot model TBC, Vivado 2026.1. Pasca-route untuk 300 MHz; 10,24 MHz hanya sintesis. Daya adalah estimasi Vivado (vectorless, confidence Low); PS8 menyumbang 2,415 W.
 Sumber: laporan alat di `$SUARATB_DATA/build/kv260/`, ringkasan di `docs/vault/sintesis.md`.
@@ -90,6 +67,8 @@ Sumber: laporan alat di `$SUARATB_DATA/build/kv260/`, ringkasan di `docs/vault/s
 **Terukur di papan** (P32, sekitar 300 MHz): keluaran FPGA bit-exact terhadap golden pada 968/968 klip (100 peserta); latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python);
 mode dataset (klip lewat AXI4-Lite) dan mikrofon INMP441. Model pembanding batuk vs bukan batuk dengan arsitektur yang sama: 100/100 klip bit-exact dan 99/100 benar (`docs/vault/model.md` §10).
 Latensi 10,24 MHz dan P16 dihitung dari siklus simulasi, bukan diukur di papan.
+Latensi CNN = siklus simulasi (Icarus, `start` sampai `done`: P16 226.520, P32 122.872) dibagi clock; waktu yang dirasakan pengguna didominasi pengambilan 0,5 s audio.
+Hasil sintesis Artix-7 XC7A35T dan pembanding Yosys ada di `docs/vault/sintesis.md`.
 
 ### Model audio
 
@@ -136,59 +115,41 @@ Skrip papan di `sw/pynq/papan/` menjalankan lima mode: dataset (audio saja, dan 
 sudo picocom -b 115200 --logfile ~/kv260_console.log /dev/ttyUSB1
 ```
 
-**2. Pintasan di papan** (login `ubuntu`; sekali per sesi, lalu permanenkan):
+**2. Model TBC** (paket `~/suaratb10`; aplikasi PL `suaratb_axil` dimuat otomatis oleh skrip, tidak perlu `xmutil`):
 
 ```bash
-source ~/suaratb10/setup_papan.sh
+cd ~/suaratb10
+sudo python3 axil1.py clips audio100 --n 20
+sudo python3 axil2.py clips fusi100 --n 50
+sudo python3 mic1.py --n 10
+sudo python3 mic2.py --n 10
 ```
 
+`axil1` (audio saja) dan `axil2` (audio + gejala) memproses klip dataset; tanpa `--n` memakai 100 peserta. Argumen kedua (`audio100`, `fusi100`) adalah nama berkas hasil
+(`.txt` dan `.csv`); beri nama berbeda tiap jalan. `mic1` dan `mic2` memakai mikrofon INMP441 (sesi 10 batuk; `mic2` menanyakan 6 gejala dulu).
+
+**3. Model batuk vs bukan batuk** (paket `~/cough`; aplikasi PL `suaratb_cough` dimuat otomatis):
+
 ```bash
-echo 'source ~/suaratb10/setup_papan.sh' >> ~/.bashrc
+cd ~/cough
+sudo python3 cough1.py clips uji100 --n 20
+sudo python3 cough_mic.py
 ```
 
+**4. Pindah paket atau model:** cukup `cd` ke folder paket lain lalu jalankan skripnya (ganti `suaratb6` dengan nama folder paket yang ada):
+
 ```bash
-papan_bantuan
+cd ~/suaratb6
 ```
 
-**3. Model TBC** (paket `~/suaratb10`; aplikasi PL `suaratb_axil` dimuat otomatis):
+Aplikasi PL berganti otomatis. Untuk memeriksa atau pindah manual:
 
 ```bash
-axil1 --n 20
-axil2 --n 50
-mic1
-mic2
-```
-
-`axil1` dan `axil2` memproses klip dataset (tanpa `--n` memakai 100 peserta). `mic1` dan `mic2` memakai mikrofon INMP441 (sesi 10 batuk; `mic2` menanyakan 6 gejala dulu).
-
-**4. Model batuk vs bukan batuk** (paket `~/cough`; aplikasi PL `suaratb_cough` dimuat otomatis):
-
-```bash
-cough1 --n 20
-cough_mic
-```
-
-**5. Pindah paket atau model:**
-
-```bash
-SUARATB_TBC=~/suaratb6 axil2 --n 20
-```
-
-```bash
-export SUARATB_TBC=~/suaratb6
-```
-
-```bash
-papan_status
-```
-
-```bash
+sudo xmutil listapps
 sudo xmutil unloadapp && sudo xmutil loadapp suaratb_cough
 ```
 
-Dua perintah pertama memakai paket lain (ganti `suaratb6` dengan nama folder paket yang ada). Perintah `xmutil` hanya untuk pindah manual; skrip melakukannya sendiri.
-
-Isi dan hasil tiap mode: `docs/vault/model.md` §9 dan §10.
+Pintasan opsional (`axil1`, `axil2`, `mic1`, `mic2`, `cough1`, `cough_mic`, `papan_status`) ada di `sw/pynq/papan/setup_papan.sh`. Isi dan hasil tiap mode: `docs/vault/model.md` §9 dan §10.
 
 ## Keterbatasan
 
