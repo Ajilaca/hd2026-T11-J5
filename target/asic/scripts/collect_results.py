@@ -2,7 +2,7 @@
 Dari ROOT repo: python target/asic/scripts/collect_results.py [--pack]
   repo  : target/asic/results/metrics/<layout>.json (salinan final/metrics.json) + target/asic/results/metrics.csv (ringkasan)
   --pack: $SUARATB_DATA/handoff/suaratb_asic_layout.zip berisi final/{gds,def,nl,pnl,sdc,spef/nom,lef,lib,metrics.*} per layout
-          (berkas internal OpenLane seperti odb, mag, sdf tidak ikut). PNG berlabel layer: target/asic/scripts/render_layout.py.
+          (berkas internal OpenLane seperti odb, mag, sdf tidak ikut).
 Satu run per layout di runs/ (c1, c2, atau fix); bila lebih dari satu, run dengan final/metrics.json terbaru dipakai.
 """
 from __future__ import annotations
