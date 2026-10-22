@@ -18,6 +18,7 @@ Akselerator memakai skema output-stationary dengan P lane paralel, dan logitnya 
 logit dari beberapa batuk dirata-rata dan digabung dengan lima gejala klinis (`sw/pynq/`).
 
 ![Arsitektur SuaraTB: sampel dari mikrofon I2S atau host AXI4-Lite, preprocessing, DSP, deteksi batuk, CNN, dan skor](docs/img/arsitektur.png)
+![Vivado Block Diagram](docs/img/Vivado%20Block%20Diagram.jpeg)
 
 Mode mikrofon memakai detektor batuk untuk memilih segmen; mode dataset memproses 50 frame pertama klip yang dikirim lewat AXI4-Lite
 (`target/kv260/axi/rtl/suaratb_axil_top.sv`).
