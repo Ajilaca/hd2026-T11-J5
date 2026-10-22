@@ -72,8 +72,9 @@ def embed(name: str, threads: int = 4, batch: int = 8):
     elif name == "clap":
         from scipy.signal import resample_poly
         pr = T.ClapProcessor.from_pretrained(repo); m = T.ClapModel.from_pretrained(repo).eval()
-        f = lambda b: m.get_audio_features(**pr(audios=[resample_poly(x, 3, 1) for x in b], sampling_rate=48000,
-                                                return_tensors="pt"))
+        def f(b):   # transformers baru mengembalikan objek keluaran; embedding audio ada di pooler_output
+            o = m.get_audio_features(**pr(audio=[resample_poly(x, 3, 1) for x in b], sampling_rate=48000, return_tensors="pt"))
+            return getattr(o, "pooler_output", o)
     elif name == "wavlm":
         fe = T.Wav2Vec2FeatureExtractor.from_pretrained(repo); m = T.WavLMModel.from_pretrained(repo).eval()
         f = lambda b: m(**fe(list(b), sampling_rate=16000, return_tensors="pt")).last_hidden_state.mean(1)
@@ -110,6 +111,7 @@ def evaluate(names, n_perm: int, out: str, reps: int = 10):
     combos = {"HeAR + OPERA-CT": ["hear", "operaCT"]}
     if best:
         combos[f"HeAR + {best}"] = ["hear", best]
+    combos["semua guru (rata-rata)"] = list(allnames)          # ditambahkan sebelum angka (K-26, catatan 2026-10-21)
     for c, mem in combos.items():
         S[c] = sum(zs(S[m]) for m in mem) / len(mem)
 
