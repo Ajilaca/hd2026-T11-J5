@@ -10,7 +10,7 @@
 | 1-2 | Selesai | Infrastruktur verifikasi; `i2s_rx`, `preemph`, `frame_buf`, `cough_det` bit-exact |
 | 3 | Selesai | `window`, `fft512`, `power`, `mel`, `log_q`, `quant`, `feat_buf` bit-exact |
 | 4 | Selesai | CNN output-stationary, P = 8/16/32, bit-exact (bobot acak dan terlatih) |
-| 5 | Selesai | `suaratb_top`: mode dataset (UART) dan mikrofon (I2S), bit-exact ujung ke ujung |
+| 5 | Selesai | `suaratb_top`: mode dataset (UART) dan mikrofon (I2S), bit-exact ujung ke ujung; versi UART dihapus 2026-10-22 (K-34), pengganti `suaratb_axil_top` (AXI4-Lite) |
 | 6 | Selesai | Vivado XC7A35T-1: 100 MHz terpenuhi (Fase 6) dan 150 MHz (`optimized`, K-22); Yosys sebagai pembanding; `sintesis.md` |
 | Remodel | Selesai (eksploratori) | Embedding HeAR/OPERA, protokol evaluasi tetap, uji permutasi, distilasi ke CNN golden; K-23, `model.md` §5d-5e |
 | T | Selesai | `make test FASE_T=1 SIM=icarus` (2026-10-12): 20 tes `tb/` lulus, 0 gagal, 45 menit 45 detik; diulang setelah penataan direktori `golden/` dan `tb/`: 20 lulus, 41 menit 5 detik, exit code 0; 67 tes `golden/` lulus. Model: bobot acak terkalibrasi (`test_top` bobot distilasi diuji terpisah). Hanya simulasi Icarus, bukan papan; Verilator tidak dipakai (cocotb 2.1 tidak cocok dengan Verilator 5.020) |
@@ -81,7 +81,7 @@ Cabang git (berantai): `fase0-2` -> `fase3` -> `fase4` -> `fase5` -> `fase6` -> 
 ## Fase 4 ditulis dan dites unit (2026-10-11)
 - RTL `rtl/cnn/*.sv`, TB `tb/cnn/test_{requant,gap,cnn_top,cnn_sweep,cnn_trained}.py`, generator `golden/gen/gen_cnn_rom.py`.
 - cnn_top bit-exact vs golden (bobot acak, bobot terlatih model_v2, P=8/16/32). Siklus: 451.851 / 226.490 / 122.843.
-- Berikutnya: Fase 5 (top, csr, uart, mode dataset/mikrofon), lalu Fase T dan 6.
+- Berikutnya: Fase 5 (top, csr, uart, mode dataset/mikrofon; versi UART kemudian diganti host AXI4-Lite, K-34), lalu Fase T dan 6.
 
 ## Fase 5-6, optimized, dan remodel (2026-10-11 s.d. 12)
 - Fase 6: Vivado P = 8/16/32 pada 100 MHz terpenuhi setelah perbaikan timing FFT dan `cough_det`; Yosys 0,33 via sv2v sebagai pembanding.

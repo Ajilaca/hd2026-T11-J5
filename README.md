@@ -14,13 +14,13 @@ dan hasilnya dikuantisasi ke int8, sehingga satu batuk menjadi segmen fitur beru
 tiap hop dengan derau latar yang dilacak (EMA) dan menentukan bagian audio yang diambil.
 
 Segmen itu masuk ke CNN: tiga lapis konvolusi 3x3 dengan ReLU dan MaxPool, lalu GAP dan dua lapis FC yang menghasilkan satu logit.
-Akselerator memakai skema output-stationary dengan P lane paralel, dan logitnya dikirim lewat UART. Di sisi perangkat lunak host,
-logit dari beberapa batuk dirata-rata dan dapat digabung dengan gejala klinis (`sw/`, belum berisi kode).
+Akselerator memakai skema output-stationary dengan P lane paralel, dan logitnya dibaca host lewat AXI4-Lite. Di sisi perangkat lunak host,
+logit dari beberapa batuk dirata-rata dan digabung dengan lima gejala klinis (`sw/pynq/`).
 
 ![Arsitektur SuaraTB: mikrofon I2S ke skor risiko](docs/img/arsitektur.png)
 
-Mode mikrofon memakai detektor batuk untuk memilih segmen; mode dataset memproses 50 frame pertama klip yang dikirim lewat UART
-(`rtl/sys/suaratb_top.sv`).
+Mode mikrofon memakai detektor batuk untuk memilih segmen; mode dataset memproses 50 frame pertama klip yang dikirim lewat AXI4-Lite
+(`target/kv260/axi/rtl/suaratb_axil_top.sv`).
 
 Dua keputusan desain yang memengaruhi seluruh repo: setiap blok punya padanan numpy bit-exact di `golden/` yang berfungsi sebagai
 spesifikasi, dan RTL dibuat vendor-neutral (tanpa IP atau primitif vendor; kode spesifik perangkat hanya di `target/`). Semua ukuran
@@ -33,7 +33,7 @@ spesifikasi, dan RTL dibuat vendor-neutral (tanpa IP atau primitif vendor; kode 
 | Detektor batuk | Energi per hop, EMA derau, ambang 8x, tahan 300 ms |
 | CNN | Conv3x3 16/32/32 + ReLU + MaxPool, GAP, FC 32->16->1; 14.496 bobot int8, 3.698.448 MAC |
 | Akselerator | Output-stationary, P lane paralel (8/16/32), akumulator 24 bit, requant per layer |
-| Antarmuka | I2S masuk, UART keluar (skor) dan mode dataset lewat UART, CSR 8 bit |
+| Antarmuka | I2S masuk; host AXI4-Lite (register kontrol, status, hasil, dan dataset) |
 
 ## Data
 
@@ -46,9 +46,9 @@ disimpan di luar repo (`$SUARATB_DATA`, awal `/data/suaratb`).
 
 Ada dua hal yang perlu dibedakan dalam mengevaluasi SuaraTB: apakah implementasi hardware bekerja sesuai model referensi, dan apakah modelnya cukup baik untuk membantu skrining TBC.
 
-Pada sisi hardware, hasil verifikasi menunjukkan bahwa RTL menghasilkan keluaran yang sesuai dengan model referensi pada pengujian yang telah dilakukan. Sintesis untuk target AMD/Xilinx Artix-7 juga menunjukkan bahwa desain dapat mencapai 150 MHz pada konfigurasi yang diuji. Hasil ini berasal dari simulasi dan sintesis, bukan pengujian pada papan FPGA fisik.
+Pada sisi hardware, hasil verifikasi menunjukkan bahwa RTL menghasilkan keluaran yang sesuai dengan model referensi pada pengujian yang telah dilakukan. Sintesis untuk target AMD/Xilinx Artix-7 juga menunjukkan bahwa desain dapat mencapai 150 MHz pada konfigurasi yang diuji. Desain juga dibangun sebagai sistem AXI4-Lite untuk papan Kria KV260 (XCK26) dan dijalankan di papan; hasil papan ada di bagian Hardware.
 
-Pada sisi model, hasilnya masih terbatas. CNN yang dilatih dari awal menghasilkan AUROC sekitar 0,56, sehingga performanya belum menunjukkan kemampuan diskriminasi yang memadai. Eksperimen menggunakan embedding audio HeAR memberikan hasil yang lebih menjanjikan, tetapi peningkatan performa ketika ditambahkan ke fitur klinis belum meyakinkan. Karena itu, hasil saat ini belum mendukung penggunaan SuaraTB sebagai alat diagnosis maupun klaim bahwa target performa skrining WHO telah terpenuhi.
+Pada sisi model, hasilnya masih terbatas. CNN yang dilatih dari awal menghasilkan AUROC sekitar 0,56, sehingga performanya belum menunjukkan kemampuan diskriminasi yang memadai. Eksperimen menggunakan embedding audio HeAR memberikan hasil yang lebih menjanjikan, tetapi peningkatan performa ketika ditambahkan ke fitur klinis belum meyakinkan. Dengan rata-rata 10 batuk per peserta dan lima gejala klinis, AUROC sekitar 0,80 pada 349 peserta (di papan, 100 peserta: 0,779), hampir seluruhnya berasal dari gejala. Karena itu, hasil saat ini belum mendukung penggunaan SuaraTB sebagai alat diagnosis maupun klaim bahwa target performa skrining WHO telah terpenuhi.
 
 ### Hardware
 
@@ -73,6 +73,24 @@ angka turunan, bukan laporan alat. Sumber: `docs/vault/sintesis.md`.
 
 Latensi ini hanya untuk CNN. Waktu yang dirasakan pengguna didominasi pengambilan 0,5 s audio.
 
+### Hardware: Kria KV260 (XCK26-SFVC784-2LV-C)
+
+Sistem AXI4-Lite (PS, SmartConnect, MMCM, inti SuaraTB), bobot model TBC, Vivado 2026.1. Pasca-route untuk 300 MHz; 10,24 MHz hanya sintesis. Daya adalah estimasi Vivado (vectorless, confidence Low); PS8 menyumbang 2,415 W.
+Sumber: laporan alat di `$SUARATB_DATA/build/kv260/`, ringkasan di `docs/vault/sintesis.md`.
+
+| | 10,24 MHz P16 | 10,24 MHz P32 | 300 MHz P16 | 300 MHz P32 |
+|---|---|---|---|---|
+| LUT | 6.688 | 8.942 | 6.326 (5,4%) | 8.541 (7,3%) |
+| FF | 8.491 | 10.761 | 8.446 | 11.107 |
+| BRAM36 / DSP | 12 / 17 | 11,5 / 17 | 12 / 17 | 11,5 / 17 |
+| WNS | +93,8 ns (sintesis) | +93,8 ns (sintesis) | +0,127 ns | +0,070 ns |
+| Daya total | - | - | 2,949 W | 2,975 W |
+| Latensi CNN (siklus simulasi / clock) | 22,1 ms | 12,0 ms | 0,76 ms | 0,41 ms |
+
+**Terukur di papan** (P32, sekitar 300 MHz): keluaran FPGA bit-exact terhadap golden pada 968/968 klip (100 peserta); latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python);
+mode dataset (klip lewat AXI4-Lite) dan mikrofon INMP441. Model pembanding batuk vs bukan batuk dengan arsitektur yang sama: 100/100 klip bit-exact dan 99/100 benar (`docs/vault/model.md` §10).
+Latensi 10,24 MHz dan P16 dihitung dari siklus simulasi, bukan diukur di papan.
+
 ### Model audio
 
 | Model | AUROC | Keterangan | Sumber |
@@ -81,6 +99,7 @@ Latensi ini hanya untuk CNN. Waktu yang dirasakan pengguna didominasi pengambila
 | Embedding HeAR (364 peserta, 60 positif) | 0,71 | Dalam jenis kelamin; p disesuaikan 0,002; referensi sisi host, tidak berjalan di FPGA | `docs/vault/model.md` §5d |
 | Distilasi HeAR ke CNN golden | 0,654 | Guru 0,672; penurunan kuantisasi int8 0,008; RTL bit-exact; eksploratori | `docs/vault/model.md` §5e |
 | CNN dari awal, kuantisasi int8 | - | Penurunan AUROC 0,001; kriteria <= 0,02 | `docs/vault/model.md` |
+| Murid CNN, rata-rata 1 / 6 / 10 batuk per peserta (349 peserta, 58 positif) | 0,52 / 0,63 / 0,72 | Model yang berjalan di FPGA; lebih dari sekitar 10 klip tidak terbukti membantu | `docs/vault/model.md` §9, K-32 |
 
 ### Model klinis
 
@@ -88,6 +107,8 @@ Latensi ini hanya untuk CNN. Waktu yang dirasakan pengguna didominasi pengambila
 |---|---|---|---|
 | Gejala klinis saja | 0,77 | 1.828 (205 positif) | `docs/vault/model.md` §5b |
 | Tambahan audio HeAR di atas klinis | +0,04 (CI mencakup 0) | 364 (60 positif) | `docs/vault/model.md` §5d |
+| Lima gejala (lama batuk, BMI, jenis kelamin, berat turun, keringat malam) | 0,78 | 1.828 (205 positif) | K-30 |
+| Gejala + rata-rata 10 batuk (fusi di host) | 0,80 (laptop, 349 peserta); 0,779 terukur di papan (100 peserta) | 349 / 100 | `docs/vault/model.md` §9 |
 
 Standar WHO TPP triase tidak dipenuhi (`docs/vault/model.md` §5c).
 
@@ -95,36 +116,42 @@ Standar WHO TPP triase tidak dipenuhi (`docs/vault/model.md` §5c).
 
 | Aspek | Hasil | Sumber |
 |---|---|---|
-| Tes RTL | 20 tes cocotb lulus, simulator Icarus 12 (regresi 2026-10-12) | `docs/vault/status-fase.md` |
+| Tes RTL | Regresi 2026-10-12: 20 tes cocotb lulus (Icarus 12, termasuk versi UART yang kini dihapus, K-34). Tes sistem sekarang `tb/sys/test_axil.py`: 3 lulus, 1 dilewati (2026-10-22) | `docs/vault/status-fase.md`, K-34 |
 | Tes golden | 67 tes lulus | `docs/vault/status-fase.md` |
 | Kesesuaian RTL dengan golden | Bit-exact per modul dan ujung ke ujung, mode dataset dan mikrofon | `docs/vault/verifikasi.md` |
 | Konfigurasi diuji | P = 8, 16, 32; bobot acak terkalibrasi, `model_v2`, dan bobot distilasi | `docs/vault/verifikasi.md`, K-23 |
 
 Laporan lengkap ada di `docs/result/result.md` (dan `report.pdf`).
 
+## Demo di papan
+
+Skrip papan di `sw/pynq/papan/` menjalankan lima mode: dataset (audio saja, dan audio + gejala), mikrofon (audio saja, dan audio + gejala), serta model verifikasi batuk vs bukan batuk. Cara pengambilan sampel
+(10 klip per peserta, detektor batuk, rata-rata logit) dan hasil terukurnya ada di `docs/vault/model.md` §9 dan §10; pintasan terminal di `sw/pynq/papan/setup_papan.sh`.
+
 ## Keterbatasan
 
 - SuaraTB dimaksudkan untuk mendukung triase dan prioritas rujukan ke pemeriksaan lanjutan, bukan untuk mendiagnosis TBC.
 - Target WHO untuk triase (sensitivitas minimal 90% dan spesifisitas minimal 70%) belum terpenuhi.
-- Desain belum diuji di papan FPGA. Jenis papan di lokasi acara belum diumumkan (Fase 7).
+- Papan KV260 sudah dipakai (P32, sekitar 300 MHz), tetapi latensi terukur di papan hanya untuk konfigurasi itu; mikrofon INMP441 belum dikalibrasi dan akurasinya dengan mikrofon belum terukur. Jenis papan di lokasi acara belum diumumkan.
+- Ambang rujukan dipilih pada data yang sama dengan evaluasi (optimistis); pada sensitivitas sekitar 90%, spesifisitas gejala + audio sekitar 49%.
 - Evaluasi audio memakai satu dataset dari tiga klinik dengan 364 peserta berlabel (60 positif); tidak ada klaim generalisasi.
 - Syarat tambahan dataset (di luar ODbL-1.0 dari metadata Kaggle) belum dibaca, dan bobot model tidak ada di repo.
 
 ## Status
 
-Fase 0 sampai 6 selesai, termasuk versi 150 MHz (cabang `optimized`) dan remodeling model. Fase T (regresi terpadu) lulus di
-simulasi. Sisanya: papan FPGA (Fase 7, bila diumumkan) dan benchmark CPU (Fase 8). Rincian di `docs/vault/status-fase.md`.
+Fase 0 sampai 6 selesai, termasuk versi 150 MHz (cabang `optimized`) dan remodeling model. Fase 7 (papan KV260) berjalan: sistem AXI4-Lite P16/P32 dibangun, P32 terbukti bit-exact
+di papan, antarmuka host UART dihapus (K-34), dan demo memakai skrip papan di `sw/pynq/`. Sisanya: benchmark CPU (Fase 8), build pasca-route 10,24 MHz, dan data rekaman dengan INMP441. Rincian di `docs/vault/status-fase.md`.
 
 ## Struktur repo
 
 | Jalur | Isi |
 |---|---|
 | `golden/` | Spesifikasi: model numpy bit-exact, parameter beku (`params.py`), pembangkit tabel/vektor/anggaran, tes golden |
-| `rtl/` | SystemVerilog vendor-neutral: audio, detektor batuk, DSP, CNN, sistem (UART, CSR, top) |
+| `rtl/` | SystemVerilog vendor-neutral: audio, detektor batuk, DSP, CNN, blok bersama; sistem dan host AXI ada di `target/kv260/axi/rtl/` |
 | `tb/` | Testbench cocotb per modul dan ujung ke ujung, vektor uji sintetis dari golden |
-| `target/` | Satu-satunya kode spesifik perangkat: skrip sintesis Vivado (Artix-7) dan Yosys |
+| `target/` | Satu-satunya kode spesifik perangkat: `kv260/` (sistem AXI4-Lite, block design, constraint, paket xmutil), `common/` (ROM bobot), `yosys/` dan `asic/` (sintesis pembanding, sky130) |
 | `model/` | Data, pelatihan, evaluasi, embedding pralatih, distilasi, ekspor bobot int8 |
-| `sw/` | Penampung perangkat lunak host (fusi klinis, benchmark, aplikasi demo); belum berisi kode |
+| `sw/` | Perangkat lunak host: `pynq/papan/` (skrip demo di papan), `pynq/laptop/` (menyiapkan paket klip dan fusi), `pynq/driver/` (driver PYNQ) |
 | `docs/` | Konteks proyek (`vault/`), keputusan, dan laporan hasil (`result/`) |
 
 Setiap direktori punya `README.md` sendiri.

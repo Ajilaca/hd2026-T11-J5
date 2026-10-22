@@ -328,3 +328,98 @@ FFT_W tetap 24 (pada data nyata W=22 juga lolos ambang K-04, 0,029 oktaf; belum 
 - **Hasil K-28 (2026-10-21; `runs/reports/kurva-belajar.md`; HeAR + LR Zambia saja, 500 pembagian, uji 37 peserta sama): 327 TIDAK terbukti lebih baik dari 291.**
   AUROC strat.: 100 -> 0,700; 150 -> 0,704; 220 -> 0,692; 291 -> 0,703; 327 -> 0,698. Δ (327 - 291) = -0,005, CI 95% [-0,013, +0,004].
   Kurva datar: menambah peserta Zambia dalam kisaran ini tidak menaikkan AUROC (plafon HeAR + LR sekitar 0,70 pada protokol ini).
+- **Tambahan K-26 (3) sebelum evaluasi dijalankan (2026-10-21, permintaan pengguna; belum ada angka guru lain yang terlihat):** lengan gabungan
+  ketiga = rata-rata skor OOF terstandar SEMUA guru yang tersedia (HeAR, OPERA-CT, Whisper, WavLM, AST, CLAP). Kriteria sama (batas bawah CI 95%
+  Δ vs HeAR > 0). Dicatat sebagai salah satu dari tiga gabungan; jumlah perbandingan bertambah, jadi hasil tipis di atas kriteria dibaca hati-hati.
+- **Hasil K-26 (2)(3) (2026-10-22; `runs/reports/guru-lain.md`; protokol E0, 364 peserta / 60 positif, 5 x 10 lipatan, nol 40): TIDAK ADA guru atau gabungan
+  yang lebih baik dari HeAR menurut kriteria (batas bawah CI 95% Δ > 0).** AUROC strat.: HeAR 0,683; OPERA-CT 0,667; Whisper 0,650; WavLM 0,645; AST 0,637;
+  CLAP 0,601 (Δ -0,082, CI [-0,141, -0,025], lebih buruk). Gabungan: HeAR + OPERA-CT 0,714 (Δ +0,031 [-0,009, +0,071]); HeAR + Whisper 0,683 (Δ -0,000);
+  semua guru 0,703 (Δ +0,020 [-0,025, +0,067], ditambahkan sebelum angka). Gabungan tampak sedikit lebih tinggi tetapi CI mencakup 0 dan ada tiga
+  gabungan yang dicoba, jadi tidak diklaim. Jalur (1) distilasi dari gabungan TIDAK dijalankan (peningkatan belum terbukti). CLAP: keluaran
+  `get_audio_features` berubah di transformers baru (objek keluaran; embedding di `pooler_output`), diperbaiki di `teachers.py` sebelum embedding dijalankan.
+
+## K-29 Model demonstrasi batuk vs bicara untuk membuktikan akselerator: aturan ditetapkan sebelum angka (2026-10-22)
+- Alasan (saran mentor): model audio TBC lemah dan tidak bisa ditingkatkan lagi dalam waktu tersisa. Untuk menunjukkan akselerator bekerja
+  pada tugas dengan sinyal yang jelas, arsitektur yang SAMA (log-mel 40x50, CNN 16/32/32, GAP, FC 32-16-1, int8, 14.496 bobot) dilatih ulang
+  untuk tugas biner lain. RTL dan golden tidak diubah; hanya bobot/ROM, dengan bitstream dan aplikasi xmutil terpisah (`suaratb_cough`).
+- Tugas: batuk (1) vs bukan batuk (0). Positif: klip batuk Zambia `distill_clips.npz` (6.354 klip, 364 peserta; detektor golden).
+  Negatif: Speech Commands v0.02 test set (CC BY 4.0; 4.890 klip: 11 folder kata + `_silence_`), dipotong dengan detektor golden yang sama
+  (segmen mulai onset - PRE_ROLL; bila detektor tidak memicu, jendela di sekitar energi puncak).
+- Pembagian: 20% peserta Zambia dan 20% pembicara Speech Commands (seed 0) sebagai UJI, tidak pernah dilihat saat latih. Tanpa pemilihan
+  model pada data uji (jumlah epoch dan hiperparameter tetap, ditetapkan di skrip sebelum dijalankan).
+- Ukuran utama: akurasi dan AUROC int8 golden pada UJI, ambang logit 0; dilaporkan juga sensitivitas, spesifisitas, akurasi per folder kata
+  dan `_silence_`. Kriteria kuantisasi seperti K-21: penurunan AUROC float -> int8 <= 0,02. HW harus bit-exact terhadap golden.
+- Batas klaim: tugas demonstrasi, BUKAN TBC. Angka ini tidak boleh disebut sebagai kinerja skrining TBC. Batuk berasal dari ponsel/perekam
+  Zambia dan bicara dari Speech Commands (perangkat, ruang, dan bahasa berbeda), jadi sebagian pemisahan bisa berasal dari perbedaan sumber;
+  kinerja dengan INMP441 di lokasi belum dikalibrasi.
+- **Hasil K-29 (2026-10-22; `runs/reports/batuk-vs-bicara.md`; UJI 1.272 batuk dari 20% peserta + 1.063 bukan batuk dari 20% pembicara):**
+  int8 golden AUROC 0,9989, akurasi 99,1% pada ambang 0 (batuk terdeteksi 99,4%, bukan batuk ditolak 98,8%; per kata 95,5-100%, `_silence_` 98,6%).
+  Float sama (0,9989; 99,1%), penurunan kuantisasi 0,0000 (LULUS). Puncak akumulator 151.669 (< 2^23). Batas klaim tetap seperti di atas:
+  sumber batuk dan bicara berbeda, bukan kinerja TBC.
+
+## K-30 Kurva belajar model gejala klinis: apakah lebih banyak data menaikkan AUROC? Aturan ditetapkan sebelum angka (2026-10-22)
+- Pertanyaan pengguna: apakah data yang lebih banyak membuat model gejala lebih baik (sebagai pengganti data sintetis, yang tidak bisa membuktikan deteksi TBC)?
+- Data: peserta Zambia berlabel `ground_truth_tb` (1.828; 205 positif). Fitur: 14 kolom gejala/anamnesis/antropometri (`fusion.CLIN`; 15 variabel setelah `tobacco_use`).
+  Pembanding sekunder: 5 gejala (jenis kelamin, lama batuk, keringat malam, penurunan berat badan, BMI), DIPILIH pada data yang sama, jadi optimistis.
+- Model: regresi logistik `fusion.cv_auc` (imputasi median + indikator, standardisasi, C=0,3, class_weight balanced).
+- Desain: 50 ulangan (seed 0-49). Tiap ulangan: UJI = 400 peserta acak berstrata label x klinik (tetap untuk semua ukuran dalam ulangan itu); sisa 1.428 = kolam latih.
+  Latih pada subset acak berstrata dari kolam dengan ukuran m dalam {200, 400, 800, 1.200, 1.428}. (Menyimpang dari rencana awal sampai 1.828: sisa 400 dipakai untuk UJI tetap.)
+- Ukuran utama: AUROC mentah pada UJI, rata-rata dan simpangan atas 50 ulangan, persentil 2,5/97,5. Δ berpasangan (1.428 - 400) dengan persentil 2,5/97,5 atas ulangan.
+  Kurva dibaca MASIH NAIK hanya bila batas bawah Δ (1.428 - 400) > 0 dan rata-rata Δ >= 0,01; selain itu dibaca datar.
+- Batas klaim: data satu sumber (Zambia); hasil dalam-dataset; jumlah positif di ukuran kecil sedikit (200 peserta sekitar 22 positif); bukan kinerja klinis.
+- **Hasil K-30 (2026-10-22; `runs/reports/kurva-belajar-gejala.md`; 50 ulangan, UJI tetap 400 peserta, sekitar 45 positif):** menurut kriteria, kurva DATAR pada 400-1.428 peserta.
+  14 kolom: AUROC UJI 200 -> 0,717; 400 -> 0,739; 800 -> 0,752; 1.200 -> 0,761; 1.428 -> 0,765; Δ (1.428 - 400) = +0,026 [-0,014; +0,068] (CI mencakup 0, jadi tidak lolos kriteria "masih naik").
+  5 gejala (dipilih pada data yang sama): 0,759 -> 0,767 -> 0,769 -> 0,772 -> 0,772; Δ = +0,006 [-0,011; +0,030]. Pembanding 14 kolom 1.428 - 200: +0,047 [+0,004; +0,104].
+  Tafsir: model gejala melandai; sebagian besar kinerjanya sudah ada pada sekitar 400 peserta (lima gejala), dan 14 kolom baru menyusul 5 gejala pada ukuran besar. Data lebih banyak dari sumber yang sama kemungkinan hanya menambah kepastian, bukan akurasi.
+
+## K-31 Simulasi data gejala sintetis 5.000 dan 10.000 peserta (ilustrasi, BUKAN bukti klinis): aturan ditetapkan sebelum angka (2026-10-22)
+- Permintaan pengguna: mencoba data sintetis untuk melihat perilaku model gejala bila datanya 5.000 dan 10.000. Hasil ini hanya ilustrasi metode.
+- Generator: regresi logistik 14 kolom (tanpa class_weight, C=0,3) dilatih pada 1.828 peserta Zambia berlabel. Peserta sintetis = baris fitur dari data asli
+  diambil acak dengan pengembalian; label ~ Bernoulli(p dari generator). Karena label dibuat dari generator, AUROC maksimum yang mungkin dicapai model adalah AUROC generator itu
+  sendiri (batas atas, dihitung pada 200.000 baris sintetis). Hasil melingkar: menunjukkan seberapa cepat penaksir mendekati batas atas, bukan bahwa gejala mendeteksi TBC.
+- Kontrol label acak: label ~ Bernoulli(prevalensi 11,2%) tidak bergantung pada fitur. Harapan: AUROC sekitar 0,5 pada semua ukuran.
+- Model yang diuji: pipeline sama seperti K-30 (imputasi, standardisasi, LR C=0,3 class_weight balanced). Ukuran latih {400, 1.428, 5.000, 10.000}, 30 ulangan,
+  tiap ulangan membangkitkan data latih baru dan UJI sintetis 20.000 baris dari generator yang sama.
+- Batas klaim: semua angka berlabel SIMULASI. Tidak boleh dikutip sebagai kinerja deteksi TBC, tidak boleh dicampur dengan hasil data asli, dan tidak masuk materi klaim.
+- **Hasil K-31 (2026-10-22; `runs/reports/simulasi-gejala.md`; SIMULASI, 30 ulangan, UJI sintetis 20.000):** batas atas AUROC generator 0,795.
+  AUROC UJI: 400 -> 0,757; 1.428 -> 0,782; 5.000 -> 0,791; 10.000 -> 0,792 (jarak ke batas atas +0,038; +0,013; +0,004; +0,003). Kontrol label acak 0,499-0,501 pada semua ukuran.
+  Tafsir: bila dunia nyata persis seperti generator, ukuran 5.000 sudah hampir di batas atas dan 10.000 tidak menambah; kontrol acak membuktikan label tak berhubungan tidak dipelajari. Bukan bukti deteksi TBC.
+
+## K-32 Lebih banyak batuk per peserta (lintas perangkat, semua klip) dan titik kerja: aturan ditetapkan sebelum angka (2026-10-22)
+- Model: murid CNN int8 distilasi (`runs/model_distill/qmodel.npz`, sama dengan ROM bitstream `suaratb_axil`); logit golden per klip dari `processed/clips/<perangkat>`.
+- Peserta: 349 peserta berlaudio ponsel C (58 positif), sama dengan `fit_fusi.py`. Skor audio peserta = rata-rata logit klipnya.
+- Varian (1): A = ponsel C, 10 klip pertama (acuan; paket sekarang); B = ponsel C, semua klip; C = ponsel A+B+C, 10 klip pertama tiap ponsel;
+  D = ponsel A+B+C, semua klip; E = D + perekam (semua klip). Perangkat yang tidak ada untuk peserta tertentu dilewati.
+- Ukuran utama: AUROC audio mentah per varian; Δ berpasangan (varian - A) dengan CI 95% bootstrap atas peserta (2.000). Varian dianggap LEBIH BAIK hanya bila batas
+  bawah CI > 0. Sekunder: AUROC fusi (skor gejala dari peserta tanpa audio + LR [gejala, audio] out-of-fold 5 lipatan, seperti `fit_fusi.py`).
+  Lima varian dibandingkan, jadi hasil tipis di atas kriteria dibaca hati-hati.
+- (3) Titik kerja: untuk audio A, fusi A, gejala saja, dan varian terbaik: ambang pada sensitivitas 95/90/85/80/70% (persentil skor positif), dilaporkan
+  spesifisitas dan jumlah dirujuk per 100 orang pada prevalensi 11,2% (Zambia berlabel). Ambang dipilih pada data yang sama: optimistis.
+- Batas klaim: lintas perangkat hanya berlaku untuk mode dataset (axil); alat dengan satu mikrofon tidak bisa memakainya. Bukan kinerja klinis.
+- **Hasil K-32 (2026-10-22; `runs/reports/lintas-perangkat.md`; 349 peserta, 58 positif, 15.155 klip):** TIDAK ADA varian yang lebih baik menurut kriteria.
+  AUROC audio: A (ponsel C, 10 klip) 0,715; B (ponsel C semua) 0,700 (Δ -0,015 [-0,056; +0,024]); C (A+B+C, 10/ponsel, 30 klip) 0,740 (Δ +0,025 [-0,016; +0,068]);
+  D (A+B+C semua) 0,725; E (+perekam) 0,733. Fusi OOF: A 0,798; C 0,807. Gejala saja 0,782.
+  Titik kerja fusi A (optimistis): sens 90% -> spes 49% (55 dirujuk/100); sens 80% -> spes 68% (37 dirujuk/100); sens 70% -> spes 74%.
+  Tafsir: lebih banyak klip melewati ~10 tidak terbukti menambah; C tampak tertinggi tetapi CI mencakup 0 dan lima varian dicoba. Paket board tetap A.
+
+## K-33 Cara agregasi logit per peserta (rata-rata pintar, buang klip buruk): aturan ditetapkan sebelum angka (2026-10-22)
+- Data sama dengan K-32 varian A (ponsel C, 10 klip pertama, 349 peserta, 58 positif; logit golden murid CNN int8).
+- Agregasi yang diuji: (a) rata-rata (acuan); (b) median; (c) rata-rata terpangkas 20% (buang 20% logit terendah dan tertinggi);
+  (d) rata-rata 50% logit tertinggi; (e) rata-rata setelah membuang klip buruk: klip dengan sampel terpotong (|x| >= 32.000 pada > 0,1% sampel)
+  atau RMS terendah 20% di antara klip peserta itu; bila semua terbuang, pakai semua klip.
+- Ukuran utama: AUROC audio; Δ (varian - rata-rata) dengan CI 95% bootstrap atas peserta (2.000). LEBIH BAIK hanya bila batas bawah CI > 0.
+  Sekunder: AUROC fusi OOF seperti K-32. Empat varian dibandingkan; hasil tipis dibaca hati-hati.
+- Varian yang lolos hanya diterapkan ke paket board bila pengguna menyetujui (mengubah axil_batch/axil2/mic1/mic2).
+- **Hasil K-33 (2026-10-22; `runs/reports/agregasi-logit.md`; 349 peserta, 3.399 klip, 0,0% klip terpotong):** TIDAK ADA agregasi yang lebih baik menurut kriteria.
+  AUROC audio: rata-rata 0,715 (acuan); median 0,708 (Δ -0,007 [-0,044; +0,032]); terpangkas 20% 0,721 (+0,006 [-0,019; +0,033]);
+  50% tertinggi 0,749 (+0,034 [-0,016; +0,088]); buang klip buruk (RMS terendah 20%) 0,736 (+0,021 [-0,014; +0,058]). Fusi OOF: acuan 0,798; 50% tertinggi 0,822.
+  Tafsir: "50% tertinggi" tampak terbaik tetapi CI mencakup 0 dan empat varian dicoba; tidak diterapkan ke paket. Bisa diuji ulang pada data independen.
+
+## K-34 UART dihapus; AXI4-Lite satu-satunya antarmuka host (2026-10-22)
+- Alasan (pengguna): antarmuka host yang dipakai dan terbukti di papan adalah AXI4-Lite; UART tidak dipakai lagi.
+- Dihapus: `rtl/sys/` (`uart_rx`, `uart_tx`, `uart_bridge`, `csr`, `suaratb_top`), `tb/sys/test_uart.py`, `tb/sys/test_top.py`, `tb/common/uart_model.py`,
+  `sw/host/host.py` (host UART), `target/kv260/uart/` (`kv260_top` dan skrip sintesis versi UART), hasil layout ASIC `uart_bridge` (png, metrics, baris csv, dan entri daftar modul).
+- Pengganti: `target/kv260/axi/rtl/suaratb_axil_top.sv` (glue sistem) + `axil_ctrl.v`; uji ujung ke ujung `tb/sys/test_axil.py` (lulus 3, lewati 1 yang memerlukan AXIL_MIC=1).
+  `rtl/files.f` tidak lagi memuat `rtl/sys/*`. Skrip Yosys (`target/yosys/synth.sh`) dan sintesis ASIC (`target/asic/synth_sky130.sh`) kini menyintesis `suaratb_axil_top`.
+- Tidak berubah: golden/, blok rtl/ lain, tag `submission` (versi UART tetap dapat diperiksa dari tag dan riwayat git). Hasil sintesis/Fmax lama yang berasal dari `suaratb_top` (UART) tetap dalam
+  `docs/vault/sintesis.md` sebagai catatan riwayat; angka baru dari top AXI tidak sebanding satu lawan satu. Build bitstream lama (`full_P*`, versi UART) tetap di `/data/suaratb/build/kv260/`.

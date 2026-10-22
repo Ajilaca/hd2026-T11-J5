@@ -22,12 +22,12 @@ hardware. Klaim yang **tidak** didukung: akurasi diagnosis, generalisasi lintas 
 
 | Bagian | Isi |
 |---|---|
-| Masukan | Mikrofon I2S (INMP441), 16 kHz, 16 bit; atau klip dataset lewat UART |
+| Masukan | Mikrofon I2S (INMP441), 16 kHz, 16 bit; atau klip dataset lewat AXI4-Lite |
 | Front-end | Pre-emphasis 0,97, frame 400/hop 160, Hamming, FFT 512 radix-2 (data 24 bit), mel 40 band, log2 LUT, kuantisasi int8 |
 | Detektor | Energi per hop, EMA derau, ambang 8x selama >= 2 hop, tahan 300 ms; segmen 50 frame x 40 mel (5 pre-roll) |
 | CNN | Conv3x3 16/32/32 + ReLU + MaxPool, GAP, FC 32->16->1; 14.496 bobot int8, 3.698.448 MAC; akumulator 24 bit |
 | Akselerator | Output-stationary, P lane paralel (P = 8/16/32), requant per layer (M0 Q15, shift, saturasi) |
-| Keluaran | Logit int16 per batuk lewat UART; skor pasien = rata-rata 3-5 batuk di host; fusi klinis di host |
+| Keluaran | Logit int16 per batuk dibaca lewat AXI4-Lite; skor pasien = rata-rata 3-5 batuk di host; fusi klinis di host |
 
 Prinsip rekayasa: golden numpy bit-exact adalah spesifikasi; RTL vendor-neutral (tanpa IP vendor di `rtl/`); semua ukuran adalah
 parameter dari satu sumber (`golden/params.py`); angka hardware hanya dari laporan alat.
@@ -56,7 +56,7 @@ Metode: vektor sintetis dari golden dibandingkan bit-exact (`==` integer, tanpa 
 | Front-end: `i2s_rx`, `preemph`, `frame_buf`, `cough_det` | Lulus |
 | DSP: `window`, `fft512`, `power`, `mel`, `log_q`, `quant`, `feat_buf`, `dsp_chain` | Lulus (12 modul Fase 2-3) |
 | CNN: `requant`, `gap`, `cnn_top` | Lulus: bobot acak (5 kasus), bobot terlatih (8 klip nyata), P = 8/16/32 |
-| Sistem: `suaratb_top` mode dataset (UART, 2 kasus) dan mikrofon (I2S -> skor) | Lulus ujung ke ujung |
+| Sistem: `suaratb_axil_top` mode dataset (AXI4-Lite) lulus bit-exact (`tb/sys/test_axil.py`); mode mikrofon lulus di simulasi dan berjalan di papan | Lulus |
 | Setelah perbaikan timing (100 MHz) dan pipeline 150 MHz | Semua tes di atas diulang dan lulus; `test_top` lulus dua kali |
 | Dengan bobot murid distilasi | `cnn_top`, mode mikrofon, dan dataset + mikrofon lulus bit-exact |
 
@@ -202,7 +202,7 @@ rendah (R² 0,16). Kuantisasi int8 turun 0,008 (lulus); RTL `cnn_top` dan `suara
 | K-15 | TBscreen sebagai data tambahan, bukan CODA (akses) |
 | K-17 | CNN output-stationary, paralel di kanal keluaran |
 | K-21 | Target akurasi 0,70/0,80 diganti pelaporan terukur + pembanding WHO TPP |
-| K-22 | Clock inti 147,456 MHz (BCLK = clk/144, UART 1280 clk/bit) |
+| K-22 | Clock inti 147,456 MHz (BCLK = clk/144; versi UART lama memakai 1280 clk/bit, dihapus pada K-34) |
 | K-23 | Embedding pralatih diuji; kriteria distilasi tidak terpenuhi; distilasi dicoba eksploratori |
 
 ## 9. Keterbatasan
