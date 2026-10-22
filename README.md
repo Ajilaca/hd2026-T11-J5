@@ -55,6 +55,10 @@ Di sisi model, hasilnya terbatas. CNN yang dilatih dari awal mencapai AUROC seki
 Sistem AXI4-Lite (PS, SmartConnect, MMCM, inti SuaraTB), bobot model TBC, Vivado 2026.1. Pasca-route untuk 300 MHz; 10,24 MHz hanya sintesis. Daya adalah estimasi Vivado (vectorless, confidence Low); PS8 menyumbang 2,415 W.
 Sumber: laporan alat di `$SUARATB_DATA/build/kv260/`, ringkasan di `docs/vault/sintesis.md`.
 
+300 MHz (299,997 MHz yang dicapai MMCM) adalah batas atas: clock tertinggi yang kita bangun di KV260 dengan timing terpenuhi. Slack-nya tipis, dan hanya konfigurasi ini yang sudah dijalankan di papan.
+10,24 MHz (10 x 1,024 MHz; dicapai 10,24001 MHz) adalah titik kerja untuk implementasi berikutnya. Rasionya ke BCLK I2S tepat 10:1, sehingga fs tepat 16 kHz. Slack timing sangat longgar (+93,8 ns),
+dan latensi CNN tetap dalam milidetik (12,0 ms untuk P32, 22,1 ms untuk P16), jauh di bawah 0,5 s pengambilan audio.
+
 | | 10,24 MHz P16 | 10,24 MHz P32 | 300 MHz P16 | 300 MHz P32 |
 |---|---|---|---|---|
 | LUT | 6.688 | 8.942 | 6.326 (5,4%) | 8.541 (7,3%) |
