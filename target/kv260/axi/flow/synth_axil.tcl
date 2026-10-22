@@ -2,7 +2,7 @@
 #   P=32 PDIR=/data/suaratb/build/synth/P32_distill OUT=/data/suaratb/build/kv260/axil_P32 vivado -mode batch -source target/kv260/axi/flow/synth_axil.tcl
 # Keluaran: $OUT/suaratb_axil_P<P>.bit dan .hwh (nama sama, dipakai PYNQ), laporan util/timing/daya/clock.
 # Env: P, PDIR, OUT (wajib); STOP (bd | synth | impl, default impl) menghentikan lebih awal; CORE_MHZ (300.032), PL0_MHZ (100),
-#      PART, BOARD_REPO, JOBS (1). PDIR berisi cnn_cfg_pkg.sv dan cnn_{wrom,bias,rq}.mem dari target/common/prep_synth.py.
+#      PART, BOARD_REPO, JOBS (1). PDIR berisi cnn_cfg_pkg.sv dan cnn_{wrom,bias,rq}.mem dari target/prep_synth.py.
 set P      $::env(P)
 set PDIR   $::env(PDIR)
 set OUT    $::env(OUT)

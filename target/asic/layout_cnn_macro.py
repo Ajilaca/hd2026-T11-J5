@@ -3,7 +3,7 @@ Dari ROOT repo: WROM=sram P=16 python target/asic/layout_cnn_macro.py [tag]
   env: P (16/32), SV2V (path sv2v, bawaan: sv2v di PATH), DOCKER_MEM, DOCKER_CPUS, CLK_NS, STA_THREADS, KLAYOUT_THREADS,
        SKIP_STEPS (id langkah OpenLane dipisah koma, mis. "Magic.WriteLEF,Odb.CheckDesignAntennaProperties"), TRDRC_ERR.
   butuh: Docker + citra openlane2 2.3.10, PDK sky130A lewat volare di ~/.volare, $SUARATB_DATA/build/synth/P<P>/
-         (target/common/prep_synth.py). Tahap akhir (Magic WriteLEF, XOR, DRC) butuh > 8 GB RAM untuk 14 makro.
+         (target/prep_synth.py). Tahap akhir (Magic WriteLEF, XOR, DRC) butuh > 8 GB RAM untuk 14 makro.
 Keluaran WROM=sram: $SUARATB_DATA/build/asic/cnn_top/p<P>/ (masukan) dan .../p<P>/run/ (hasil OpenLane, dipindah dari runs/<tag>).
 Mode lain (diagnosis lama): cnn_top_macro*. Penempatan makro manual: baris atas di tepi atas, sisanya di tepi bawah, logika di tengah.
 """

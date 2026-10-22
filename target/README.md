@@ -4,7 +4,7 @@ Satu-satunya tempat kode yang bergantung perangkat atau alat (rtl/ dan golden/ t
 
 | Subdirektori | Isi |
 |---|---|
-| `common/` | `prep_synth.py`: paket konfigurasi CNN dan ROM bobot untuk satu P; dipakai semua alur sintesis |
+| `prep_synth.py` | Paket konfigurasi CNN dan ROM bobot untuk satu P; dipakai semua alur sintesis |
 | `kv260/` | Kria KV260 (XCK26): sistem AXI4-Lite yang berjalan di papan (`axi/`) dan skrip analisis (`analisis/`) |
 | `yosys/` | Sintesis lintas-vendor Yosys (Artix-7, `xc7`) sebagai pembanding sumber daya |
 | `asic/` | Sintesis dan layout sky130 (Yosys, OpenLane/OpenROAD) |

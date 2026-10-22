@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sintesis lintas-vendor Yosys (synth_xilinx -family xc7) untuk satu nilai P. Jalankan dari ROOT repo:
-#   target/yosys/synth.sh 16     (butuh target/common/prep_synth.py --p 16 --out $SUARATB_DATA/build/synth/P16 lebih dulu)
+#   target/yosys/synth.sh 16     (butuh target/prep_synth.py --p 16 --out $SUARATB_DATA/build/synth/P16 lebih dulu)
 # sv2v mengubah SystemVerilog -> Verilog (Yosys 0.33 belum membaca import paket/return fungsi). RTL tidak diubah.
 set -eu
 P=${1:?P}

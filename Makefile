@@ -58,7 +58,7 @@ synth-yosys: synth-prep
 	@test $(DATA)/build/yosys/P$(P)/stat.txt -nt $(DATA)/build/.stamp_yosys || { echo "Yosys gagal: lihat $(DATA)/build/yosys/P$(P)/yosys.log"; exit 1; }
 
 synth-prep:
-	@test -f $(DATA)/build/synth/P$(P)/cnn_cfg_pkg.sv || $(PY) target/common/prep_synth.py --p $(P) --out $(DATA)/build/synth/P$(P) --model $(MODEL)
+	@test -f $(DATA)/build/synth/P$(P)/cnn_cfg_pkg.sv || $(PY) target/prep_synth.py --p $(P) --out $(DATA)/build/synth/P$(P) --model $(MODEL)
 
 wave:
 	gtkwave $$(ls -t target/build/*/*.vcd target/build/*/*.fst 2>/dev/null | head -1)

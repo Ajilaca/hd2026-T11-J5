@@ -11,7 +11,7 @@ dihitung dari angka lain diberi label.
 - Yosys: `synth_xilinx -family xc7` setelah `sv2v` (Yosys 0.33 tidak membaca `import pkg::*` dan `return` dalam fungsi); tanpa
   place and route, tanpa timing.
 - Catatan 2026-10-22: seluruh hasil di dokumen ini yang menyebut `suaratb_top` berasal dari versi UART lama (dihapus, K-34; ada di riwayat git dan tag submission); skrip Yosys sekarang menyintesis `suaratb_axil_top`, jadi angka baru tidak sebanding satu lawan satu dengan tabel lama.
-- Skrip: `target/common/prep_synth.py`, `target/yosys/synth.sh`. Skrip sintesis Artix-7 (`synth.tcl`, `run_sweep.sh`, dulu di `target/artix7/`) dihapus pada 2026-10-22; hasilnya tetap valid, skripnya ada di riwayat git (commit sebelum perubahan ini). Laporan lengkap di
+- Skrip: `target/prep_synth.py`, `target/yosys/synth.sh`. Skrip sintesis Artix-7 (`synth.tcl`, `run_sweep.sh`, dulu di `target/artix7/`) dihapus pada 2026-10-22; hasilnya tetap valid, skripnya ada di riwayat git (commit sebelum perubahan ini). Laporan lengkap di
   `$SUARATB_DATA/build/vivado/P*/` dan `build/yosys/P*/`.
 
 ## Hasil Vivado (setelah route, suaratb_top lengkap, constraint clock 10 ns)
