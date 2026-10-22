@@ -19,7 +19,6 @@ SRC = {  # modul: berkas RTL (selain paket)
     "requant": ["rtl/cnn/requant.sv"], "pe_array": ["rtl/cnn/pe_array.sv"],
     "cnn_top": ["rtl/common/rom_sync.sv", "rtl/common/ram_sdp.sv", "rtl/cnn/pe_array.sv", "rtl/cnn/requant.sv", "rtl/cnn/gap.sv",
                 "rtl/cnn/cnn_ctrl.sv", "rtl/cnn/cnn_top.sv"], "gap": ["rtl/cnn/gap.sv"],
-    "uart_bridge": ["rtl/sys/uart_rx.sv", "rtl/sys/uart_tx.sv", "rtl/sys/uart_bridge.sv"],
 }
 PP = int(os.environ.get("P", "16"))               # P untuk modul bergantung-P (pe_array, requant); P != 16 -> direktori <modul>_P<P>
 CNN_PKG = D / f"build/synth/P{PP}/cnn_cfg_pkg.sv"

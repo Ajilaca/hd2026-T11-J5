@@ -3,7 +3,7 @@
     python -m tb.sys.test_axil                 # semua uji (Icarus; SIM=icarus)
     AXIL_CASES=cough python -m tb.sys.test_axil   # satu kasus dataset saja (lebih cepat)
     AXIL_MIC=1 python -m tb.sys.test_axil         # tambah uji mode mikrofon (lama, ~12 juta siklus)
-Sumber tambahan di luar rtl/: target/kv260/axi/axil_ctrl.v dan suaratb_axil_top.sv.
+Sumber tambahan di luar rtl/: target/kv260/axi/rtl/axil_ctrl.v dan suaratb_axil_top.sv.
 """
 import os
 import pathlib
@@ -25,7 +25,7 @@ from tb.common.cocotb_utils import start_clock, reset
 from tb.common.golden_model import random_calibrated_model
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-AXI_SRC = [str(ROOT / "target/kv260/axi/axil_ctrl.v"), str(ROOT / "target/kv260/axi/suaratb_axil_top.sv")]
+AXI_SRC = [str(ROOT / "target/kv260/axi/rtl/axil_ctrl.v"), str(ROOT / "target/kv260/axi/rtl/suaratb_axil_top.sv")]
 CPBCLK = 8                                  # clk per BCLK I2S pada simulasi (512 siklus/sampel >= 404)
 N_SAMPLES = params.CLIP_SAMPLES_PADDED
 DS_GAP = params.FRAME_LEN + 16

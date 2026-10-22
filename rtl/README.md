@@ -10,8 +10,7 @@ Semua ukuran berasal dari `suaratb_pkg.sv` dan `cnn_cfg_pkg.sv` (dihasilkan `gol
 | `detect/` | Detektor batuk |
 | `dsp/` | Window, FFT 512, power, mel, log2, kuantisasi, penyangga fitur, rantai DSP |
 | `cnn/` | Akselerator CNN output-stationary |
-| `sys/` | UART, CSR, jembatan UART, top level |
 | `mem/` | Tabel `.mem` hasil golden |
 
 `files.f` memuat daftar berkas urut kompilasi. Aliran data: `i2s_rx` -> `preemph` -> `frame_buf` -> `cough_det`/`dsp_chain` ->
-`feat_buf` -> `cnn_top` -> `uart_bridge` (dalam `suaratb_top`).
+`feat_buf` -> `cnn_top` (digabung di `target/kv260/axi/rtl/suaratb_axil_top.sv`).

@@ -26,8 +26,3 @@ rtl/cnn/gap.sv
 rtl/cnn/cnn_ctrl.sv
 rtl/cnn/cnn_top.sv
 // Fase 5: sistem
-rtl/sys/uart_rx.sv
-rtl/sys/uart_tx.sv
-rtl/sys/csr.sv
-rtl/sys/uart_bridge.sv
-rtl/sys/suaratb_top.sv

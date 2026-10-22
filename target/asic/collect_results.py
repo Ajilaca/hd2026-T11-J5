@@ -10,7 +10,7 @@ import csv, json, os, pathlib, shutil, sys, zipfile
 
 D = pathlib.Path(os.environ.get("SUARATB_DATA", "/data/suaratb"))
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-LAYOUTS = ["i2s_rx", "preemph", "uart_bridge", "gap", "window", "log_q", "cough_det", "power", "mel",
+LAYOUTS = ["i2s_rx", "preemph", "gap", "window", "log_q", "cough_det", "power", "mel",
            "requant", "requant_P32", "pe_array", "pe_array_P32"]
 COLS = {  # kolom csv: kunci metrics.json OpenLane
     "pin": "design__io", "sel": "design__instance__count__stdcell", "area_sel_um2": "design__instance__area__stdcell",
