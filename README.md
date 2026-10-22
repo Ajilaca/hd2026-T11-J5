@@ -1,8 +1,8 @@
 # SuaraTB
 
-Suara batuk berpotensi digunakan sebagai salah satu sumber informasi untuk skrining tuberkulosis (TBC). Namun, membangun model yang bisa mengenali pola dari audio batuk saja tidak cukup. Model tersebut juga perlu diuji pada data yang sesuai, dan implementasinya harus bisa dijalankan pada perangkat dengan sumber daya terbatas.
+Suara batuk dapat menjadi salah satu sumber informasi untuk skrining tuberkulosis (TBC). Agar berguna, modelnya harus diuji pada data yang sesuai dan bisa dijalankan pada perangkat dengan sumber daya terbatas.
 
-SuaraTB dikembangkan untuk mengeksplorasi pendekatan tersebut melalui akselerator FPGA. Proyek ini menggabungkan pemrosesan audio, ekstraksi fitur log-mel, dan CNN berkuantisasi int8 untuk menghasilkan skor risiko. Implementasi hardware ditulis dalam SystemVerilog, dengan model referensi di `golden/` sebagai acuan untuk memeriksa kesesuaian hasil komputasi RTL.
+SuaraTB adalah akselerator FPGA yang menggabungkan pemrosesan audio, ekstraksi fitur log-mel, dan CNN berkuantisasi int8 untuk menghasilkan skor risiko. Hardware ditulis dalam SystemVerilog, dan model referensi di `golden/` dipakai untuk memeriksa kesesuaian hasil komputasi RTL.
 
 Proyek ini dibuat untuk Hackathon Deeptech 2026 - Indonesia Chip Hackathon Challenge, ITB/ICDeC, dengan tema *Medical Device*.
 
@@ -22,7 +22,7 @@ logit dari beberapa batuk dirata-rata dan digabung dengan lima gejala klinis (`s
 Mode mikrofon memakai detektor batuk untuk memilih segmen; mode dataset memproses 50 frame pertama klip yang dikirim lewat AXI4-Lite
 (`target/kv260/axi/rtl/suaratb_axil_top.sv`).
 
-Dua keputusan desain yang memengaruhi seluruh repo: setiap blok punya padanan numpy bit-exact di `golden/` yang berfungsi sebagai
+Dua keputusan desain berlaku untuk seluruh repo: setiap blok punya padanan numpy bit-exact di `golden/` yang berfungsi sebagai
 spesifikasi, dan RTL dibuat vendor-neutral (tanpa IP atau primitif vendor; kode spesifik perangkat hanya di `target/`). Semua ukuran
 (P, lebar data, jumlah kanal) berasal dari `golden/params.py`, sehingga konfigurasi dapat diperkecil untuk FPGA yang lebih kecil.
 
@@ -44,11 +44,11 @@ disimpan di luar repo (`$SUARATB_DATA`, awal `/data/suaratb`).
 
 ## Hasil dan Evaluasi
 
-Ada dua hal yang perlu dibedakan dalam mengevaluasi SuaraTB: apakah implementasi hardware bekerja sesuai model referensi, dan apakah modelnya cukup baik untuk membantu skrining TBC.
+Evaluasi SuaraTB punya dua pertanyaan terpisah: apakah hardware bekerja sesuai model referensi, dan apakah modelnya cukup baik untuk membantu skrining TBC.
 
-Pada sisi hardware, hasil verifikasi menunjukkan bahwa RTL menghasilkan keluaran yang sesuai dengan model referensi pada pengujian yang telah dilakukan. Desain juga dibangun sebagai sistem AXI4-Lite untuk papan Kria KV260 (XCK26) dan dijalankan di papan; hasil papan ada di bagian Hardware.
+Di sisi hardware, RTL menghasilkan keluaran yang sama dengan model referensi pada pengujian yang telah dilakukan. Desain juga dibangun sebagai sistem AXI4-Lite untuk papan Kria KV260 (XCK26) dan dijalankan di papan; hasilnya ada di bagian Hardware.
 
-Pada sisi model, hasilnya masih terbatas. CNN yang dilatih dari awal menghasilkan AUROC sekitar 0,56, sehingga performanya belum menunjukkan kemampuan diskriminasi yang memadai. Eksperimen menggunakan embedding audio HeAR memberikan hasil yang lebih menjanjikan, tetapi peningkatan performa ketika ditambahkan ke fitur klinis belum meyakinkan. Dengan rata-rata 10 batuk per peserta dan lima gejala klinis, AUROC sekitar 0,80 pada 349 peserta (di papan, 100 peserta: 0,779), hampir seluruhnya berasal dari gejala. Karena itu, hasil saat ini belum mendukung penggunaan SuaraTB sebagai alat diagnosis maupun klaim bahwa target performa skrining WHO telah terpenuhi.
+Di sisi model, hasilnya terbatas. CNN yang dilatih dari awal mencapai AUROC sekitar 0,56, belum cukup untuk membedakan kelas. Embedding audio HeAR lebih baik, tetapi tambahannya di atas fitur klinis belum meyakinkan. Dengan rata-rata 10 batuk per peserta dan lima gejala klinis, AUROC sekitar 0,80 pada 349 peserta (di papan, 100 peserta: 0,779), hampir seluruhnya berasal dari gejala. Hasil ini belum mendukung penggunaan SuaraTB sebagai alat diagnosis, dan target WHO untuk skrining belum terpenuhi.
 
 ### Hardware (Kria KV260, XCK26-SFVC784-2LV-C)
 
@@ -64,7 +64,7 @@ Sumber: laporan alat di `$SUARATB_DATA/build/kv260/`, ringkasan di `docs/vault/s
 | Daya total | - | - | 2,949 W | 2,975 W |
 | Latensi CNN (siklus simulasi / clock) | 22,1 ms | 12,0 ms | 0,76 ms | 0,41 ms |
 
-**Terukur di papan** (P32, sekitar 300 MHz): keluaran FPGA bit-exact terhadap golden pada 968/968 klip (100 peserta); latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python);
+Terukur di papan (P32, sekitar 300 MHz): keluaran FPGA bit-exact terhadap golden pada 968/968 klip (100 peserta); latensi sekitar 0,4 ms per klip setelah sampel terakhir (diukur dengan Python);
 mode dataset (klip lewat AXI4-Lite) dan mikrofon INMP441. Model pembanding batuk vs bukan batuk dengan arsitektur yang sama: 100/100 klip bit-exact dan 99/100 benar (`docs/vault/model.md` §10).
 Latensi 10,24 MHz dan P16 dihitung dari siklus simulasi, bukan diukur di papan.
 Latensi CNN = siklus simulasi (Icarus, `start` sampai `done`: P16 226.520, P32 122.872) dibagi clock; waktu yang dirasakan pengguna didominasi pengambilan 0,5 s audio.
@@ -109,13 +109,13 @@ Skrip papan di `sw/pynq/papan/` menjalankan lima mode: dataset (audio saja, dan 
 
 ## Menjalankan di papan (KV260)
 
-**1. Konsol serial dari laptop** (kabel micro-USB data; keluar dengan Ctrl+A lalu Ctrl+X):
+1. Konsol serial dari laptop (kabel micro-USB data; keluar dengan Ctrl+A lalu Ctrl+X):
 
 ```bash
 sudo picocom -b 115200 --logfile ~/kv260_console.log /dev/ttyUSB1
 ```
 
-**2. Model TBC** (paket `~/suaratb10`; aplikasi PL `suaratb_axil` dimuat otomatis oleh skrip, tidak perlu `xmutil`):
+2. Model TBC (paket `~/suaratb10`; aplikasi PL `suaratb_axil` dimuat otomatis oleh skrip, tidak perlu `xmutil`):
 
 ```bash
 cd ~/suaratb10
@@ -128,7 +128,7 @@ sudo python3 mic2.py --n 10
 `axil1` (audio saja) dan `axil2` (audio + gejala) memproses klip dataset; tanpa `--n` memakai 100 peserta. Argumen kedua (`audio100`, `fusi100`) adalah nama berkas hasil
 (`.txt` dan `.csv`); beri nama berbeda tiap jalan. `mic1` dan `mic2` memakai mikrofon INMP441 (sesi 10 batuk; `mic2` menanyakan 6 gejala dulu).
 
-**3. Model batuk vs bukan batuk** (paket `~/cough`; aplikasi PL `suaratb_cough` dimuat otomatis):
+3. Model batuk vs bukan batuk (paket `~/cough`; aplikasi PL `suaratb_cough` dimuat otomatis):
 
 ```bash
 cd ~/cough
@@ -136,7 +136,7 @@ sudo python3 cough1.py clips uji100 --n 20
 sudo python3 cough_mic.py
 ```
 
-**4. Pindah paket atau model:** cukup `cd` ke folder paket lain lalu jalankan skripnya (ganti `suaratb6` dengan nama folder paket yang ada):
+4. Pindah paket atau model: cukup `cd` ke folder paket lain lalu jalankan skripnya (ganti `suaratb6` dengan nama folder paket yang ada):
 
 ```bash
 cd ~/suaratb6
@@ -155,15 +155,16 @@ Pintasan opsional (`axil1`, `axil2`, `mic1`, `mic2`, `cough1`, `cough_mic`, `pap
 
 - SuaraTB dimaksudkan untuk mendukung triase dan prioritas rujukan ke pemeriksaan lanjutan, bukan untuk mendiagnosis TBC.
 - Target WHO untuk triase (sensitivitas minimal 90% dan spesifisitas minimal 70%) belum terpenuhi.
-- Papan KV260 sudah dipakai (P32, sekitar 300 MHz), tetapi latensi terukur di papan hanya untuk konfigurasi itu; mikrofon INMP441 belum dikalibrasi dan akurasinya dengan mikrofon belum terukur. Jenis papan di lokasi acara belum diumumkan.
+- Papan KV260 sudah dipakai (P32, sekitar 300 MHz), tetapi latensi terukur di papan hanya untuk konfigurasi itu; mikrofon INMP441 belum dikalibrasi dan akurasi di mode mikrofon belum terukur. Jenis papan di lokasi acara belum diumumkan.
 - Ambang rujukan dipilih pada data yang sama dengan evaluasi (optimistis); pada sensitivitas sekitar 90%, spesifisitas gejala + audio sekitar 49%.
 - Evaluasi audio memakai satu dataset dari tiga klinik dengan 364 peserta berlabel (60 positif); tidak ada klaim generalisasi.
 - Syarat tambahan dataset (di luar ODbL-1.0 dari metadata Kaggle) belum dibaca, dan bobot model tidak ada di repo.
 
 ## Status
 
-Fase 0 sampai 6 selesai, termasuk versi 150 MHz (cabang `optimized`) dan remodeling model. Fase 7 (papan KV260) berjalan: sistem AXI4-Lite P16/P32 dibangun, P32 terbukti bit-exact
-di papan, antarmuka host UART dihapus (K-34), dan demo memakai skrip papan di `sw/pynq/`. Sisanya: benchmark CPU (Fase 8), build pasca-route 10,24 MHz, dan data rekaman dengan INMP441. Rincian di `docs/vault/status-fase.md`.
+Fase 0 sampai 6 selesai, termasuk versi 150 MHz (cabang `optimized`) dan remodeling model. Fase 7 (papan KV260) sedang berjalan. Sistem AXI4-Lite P16 dan P32 sudah dibangun,
+P32 terbukti bit-exact di papan, host UART dihapus (K-34), dan demo memakai skrip di `sw/pynq/`. Yang tersisa: benchmark CPU (Fase 8), build pasca-route 10,24 MHz, dan rekaman dengan INMP441.
+Rincian di `docs/vault/status-fase.md`.
 
 ## Struktur repo
 
@@ -193,3 +194,12 @@ Perintah build dan tes ada di `Makefile` (`make help`) dan docstring skrip; READ
 ## Lisensi
 
 Lihat `LICENSE`. Data Zambia CIDRZ (ODbL-1.0) dan TBscreen (CC BY 4.0) tidak didistribusikan di repo ini.
+
+## Penggunaan AI
+
+AI dipakai sebagai alat bantu pada proyek ini untuk:
+
+- verifikasi dan penulisan skrip pembuatan model
+- debugging proses layouting
+- training embedding dengan HeAR
+- debugging di seluruh bagian proyek
